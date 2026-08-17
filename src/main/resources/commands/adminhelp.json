@@ -1,0 +1,6 @@
+{
+  "name": "adminhelp",
+  "description": "Shows commands available to server administrators.",
+  "type": 1,
+  "default_member_permissions": "8"
+}

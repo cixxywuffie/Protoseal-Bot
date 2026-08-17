@@ -1,0 +1,26 @@
+{
+  "name": "chastity",
+  "description": "Changes a user's chastity restraint.",
+  "type": 1,
+  "nsfw": true,
+  "options": [
+    {
+      "name": "target",
+      "description": "User to target.",
+      "type": 6,
+      "required": true
+    },
+    {
+      "name": "level",
+      "description": "Chastity type (cage by default).",
+      "type": 4,
+      "required": false,
+      "choices": [
+        { "name": "Remove", "value": 0 },
+        { "name": "Cage", "value": 1 },
+        { "name": "Belt", "value": 2 },
+        { "name": "Null bulge", "value": 3 }
+      ]
+    }
+  ]
+}

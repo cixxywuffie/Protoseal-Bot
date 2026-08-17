@@ -1,0 +1,26 @@
+{
+  "name": "hood",
+  "description": "Changes a user's hood restraint.",
+  "type": 1,
+  "nsfw": true,
+  "options": [
+    {
+      "name": "target",
+      "description": "User to target.",
+      "type": 6,
+      "required": true
+    },
+    {
+      "name": "level",
+      "description": "Hood level.",
+      "type": 4,
+      "required": false,
+      "choices": [
+        { "name": "Remove", "value": 0 },
+        { "name": "Leather hood", "value": 1 },
+        { "name": "Blindfold hood", "value": 2 },
+        { "name": "Full hood", "value": 3 }
+      ]
+    }
+  ]
+}

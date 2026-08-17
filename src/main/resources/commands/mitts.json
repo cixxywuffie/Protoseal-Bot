@@ -1,0 +1,26 @@
+{
+  "name": "mitts",
+  "description": "Changes a user's restraint mitts.",
+  "type": 1,
+  "nsfw": true,
+  "options": [
+    {
+      "name": "target",
+      "description": "User to target.",
+      "type": 6,
+      "required": true
+    },
+    {
+      "name": "level",
+      "description": "Mitts type (mittens by default).",
+      "type": 4,
+      "required": false,
+      "choices": [
+        { "name": "Remove", "value": 0 },
+        { "name": "Mittens", "value": 1 },
+        { "name": "Puppy paws", "value": 2 },
+        { "name": "Horse hooves", "value": 3 }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "name": "legcuffs",
+  "description": "Changes a user's leg restraints.",
+  "type": 1,
+  "nsfw": true,
+  "options": [
+    {
+      "name": "target",
+      "description": "User to target.",
+      "type": 6,
+      "required": true
+    },
+    {
+      "name": "level",
+      "description": "Restraint level.",
+      "type": 4,
+      "required": false,
+      "choices": [
+        { "name": "Release", "value": 0 },
+        { "name": "Light", "value": 1 },
+        { "name": "Medium", "value": 2 },
+        { "name": "Intense", "value": 3 }
+      ]
+    }
+  ]
+}

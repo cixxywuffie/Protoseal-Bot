@@ -1,0 +1,14 @@
+{
+  "name": "consentreset",
+  "description": "Resets a user's consent to self only (administrators only).",
+  "type": 1,
+  "default_member_permissions": "8",
+  "options": [
+    {
+      "name": "target",
+      "description": "User whose consent will be reset.",
+      "type": 6,
+      "required": true
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "name": "safeword",
+  "description": "Resets restraint states in this server.",
+  "type": 1,
+  "options": [
+    {
+      "name": "target",
+      "description": "User to reset (administrators only).",
+      "type": 6,
+      "required": false
+    }
+  ]
+}

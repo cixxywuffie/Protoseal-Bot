@@ -1,0 +1,28 @@
+{
+  "name": "lock",
+  "description": "Locks all of a user's active restraints.",
+  "type": 1,
+  "nsfw": true,
+  "options": [
+    {
+      "name": "target",
+      "description": "User whose active restraints will be locked.",
+      "type": 6,
+      "required": true
+    },
+    {
+      "name": "type",
+      "description": "Lock type. Permalock is irreversible except through /safeword.",
+      "type": 3,
+      "required": false,
+      "choices": [
+        { "name": "Remove lock", "value": "REMOVE" },
+        { "name": "Padlock", "value": "PADLOCK" },
+        { "name": "Glue", "value": "GLUE" },
+        { "name": "Sewn", "value": "SEWN" },
+        { "name": "Tape", "value": "TAPE" },
+        { "name": "⚠ Permalock — /safeword only", "value": "PERMALOCK" }
+      ]
+    }
+  ]
+}

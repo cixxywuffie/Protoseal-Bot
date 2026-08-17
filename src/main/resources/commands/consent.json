@@ -1,0 +1,25 @@
+{
+  "name": "consent",
+  "description": "Configures who can manage your restraints in this server.",
+  "type": 1,
+  "options": [
+    {
+      "name": "mode",
+      "description": "Your consent mode.",
+      "type": 3,
+      "required": true,
+      "choices": [
+        { "name": "Self only", "value": "SELF_ONLY" },
+        { "name": "Exposed", "value": "EXPOSED" },
+        { "name": "Owner", "value": "OWNER" },
+        { "name": "Disabled", "value": "DISABLED" }
+      ]
+    },
+    {
+      "name": "owner",
+      "description": "Required when using owner mode.",
+      "type": 6,
+      "required": false
+    }
+  ]
+}

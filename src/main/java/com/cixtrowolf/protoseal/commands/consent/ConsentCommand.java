@@ -1,0 +1,120 @@
+package com.cixtrowolf.protoseal.commands.consent;
+
+import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
+import discord4j.core.object.command.ApplicationCommandInteractionOption;
+import discord4j.core.object.component.ActionRow;
+import discord4j.core.object.component.Button;
+import discord4j.core.object.entity.User;
+import com.cixtrowolf.protoseal.commands.SlashCommandInterface;
+import com.cixtrowolf.protoseal.persistence.consent.ConsentMode;
+import com.cixtrowolf.protoseal.persistence.consent.ConsentService;
+import org.springframework.stereotype.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
+
+import java.util.Locale;
+
+@Component
+public class ConsentCommand implements SlashCommandInterface {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConsentCommand.class);
+    private final ConsentService consentService;
+
+    public ConsentCommand(ConsentService consentService) {
+        this.consentService = consentService;
+    }
+
+    @Override
+    public String getName() {
+        return "consent";
+    }
+
+    @Override
+    public Mono<Void> handle(ChatInputInteractionEvent event) {
+        var guildId = event.getInteraction().getGuildId();
+        if (guildId.isEmpty()) {
+            return event.reply("This command can only be used in a server.").withEphemeral(true);
+        }
+
+        var mode = event.getOption("mode")
+                .flatMap(ApplicationCommandInteractionOption::getValue)
+                .map(value -> ConsentMode.valueOf(value.asString().toUpperCase(Locale.ROOT)));
+        if (mode.isEmpty()) {
+            return event.reply("You must select a consent mode.").withEphemeral(true);
+        }
+
+        User actor = event.getInteraction().getUser();
+        if (mode.get() != ConsentMode.OWNER) {
+            return saveConsent(event, guildId.get().asString(), actor.getId().asString(), mode.get(), null);
+        }
+
+        return event.getOption("owner")
+                .flatMap(ApplicationCommandInteractionOption::getValue)
+                .map(value -> value.asUser())
+                .map(owner -> owner.flatMap(user -> {
+                    if (user.getId().equals(actor.getId())) {
+                        return event.reply("You cannot select yourself as your owner.").withEphemeral(true);
+                    }
+                    if (user.isBot()) {
+                        return event.reply("A bot cannot be selected as an owner.").withEphemeral(true);
+                    }
+                    return sendOwnerInvitation(event, user, guildId.get().asString(), actor);
+                }))
+                .orElseGet(() -> event.reply("Owner mode requires an owner user.").withEphemeral(true));
+    }
+
+    private Mono<Void> saveConsent(ChatInputInteractionEvent event, String guildId, String userId,
+                                   ConsentMode mode, String ownerUserId) {
+        return Mono.fromRunnable(() -> consentService.updateConsent(guildId, userId, mode, ownerUserId))
+                .subscribeOn(Schedulers.boundedElastic())
+                .doOnSuccess(ignored -> LOGGER.info(
+                        "Consent updated guildId={} userId={} mode={} ownerId={}",
+                        guildId, userId, mode, ownerUserId))
+                .doOnError(error -> LOGGER.error(
+                        "Consent update failed guildId={} userId={} mode={}", guildId, userId, mode, error))
+                .then(event.reply(consentMessage(mode, ownerUserId)).withEphemeral(true));
+    }
+
+    private Mono<Void> sendOwnerInvitation(ChatInputInteractionEvent event, User owner,
+                                           String guildId, User requester) {
+        return Mono.fromCallable(() -> consentService.createOwnerRequest(
+                        guildId, requester.getId().asString(), owner.getId().asString()))
+                .subscribeOn(Schedulers.boundedElastic())
+                .flatMap(token -> owner.getPrivateChannel()
+                        .flatMap(channel -> channel.createMessage(
+                                        "**Owner consent invitation**\n\n"
+                                                + requester.getUsername() + " wants to select you as their owner "
+                                                + "for restraint roleplay in server `" + guildId + "`.\n\n"
+                                                + "Accepting allows you to manage their restraints and locks. "
+                                                + "This invitation expires in 24 hours.")
+                                .withComponents(ActionRow.of(
+                                        Button.success("consent-owner:accept:" + token, "Accept"),
+                                        Button.danger("consent-owner:reject:" + token, "Reject"))))
+                        .then(event.reply("Owner invitation sent to " + owner.getMention()
+                                + ". Your current consent mode will remain unchanged until they accept.")
+                                .withEphemeral(true))
+                        .doOnSuccess(ignored -> LOGGER.info(
+                                "Owner invitation sent guildId={} requesterId={} ownerId={}",
+                                guildId, requester.getId(), owner.getId()))
+                        .onErrorResume(error -> Mono.fromRunnable(() -> consentService.cancelOwnerRequest(
+                                        guildId, requester.getId().asString()))
+                                .subscribeOn(Schedulers.boundedElastic())
+                                .doOnSuccess(ignored -> LOGGER.warn(
+                                        "Owner invitation cancelled after DM failure guildId={} requesterId={} ownerId={}",
+                                        guildId, requester.getId(), owner.getId()))
+                                .then(event.reply("I could not send that user a DM. Your consent was not changed.")
+                                        .withEphemeral(true))));
+    }
+
+    private String consentMessage(ConsentMode mode, String ownerUserId) {
+        return switch (mode) {
+            case SELF_ONLY -> "Consent updated to **self only**. Only you can manage your restraints.";
+            case EXPOSED -> "Consent updated to **exposed**. Other users can manage your restraints and locks.";
+            case OWNER -> "Consent updated to **owner**. Only <@" + ownerUserId
+                    + "> can manage your restraints and locks.";
+            case DISABLED -> "Consent **disabled**. No restraints or locks can be managed; `/safeword` remains available.";
+        };
+    }
+}

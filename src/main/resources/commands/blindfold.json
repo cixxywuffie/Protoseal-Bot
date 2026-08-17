@@ -1,0 +1,26 @@
+{
+  "name": "blindfold",
+  "description": "Changes a user's blindfold restraint.",
+  "type": 1,
+  "nsfw": true,
+  "options": [
+    {
+      "name": "target",
+      "description": "User to target.",
+      "type": 6,
+      "required": true
+    },
+    {
+      "name": "level",
+      "description": "Blindfold type (leather by default).",
+      "type": 4,
+      "required": false,
+      "choices": [
+        { "name": "Remove", "value": 0 },
+        { "name": "Leather blindfold", "value": 1 },
+        { "name": "Bandage", "value": 2 },
+        { "name": "Blind protection goggles", "value": 3 }
+      ]
+    }
+  ]
+}

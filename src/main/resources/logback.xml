@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true">
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{48} - %msg%n%ex</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Application logs: command executions, rejected requests and failures. -->
+    <logger name="com.cixtrowolf.protoseal" level="${APP_LOG_LEVEL:-INFO}"/>
+
+    <!-- Discord lifecycle information is useful locally; lower-level networking is noisy. -->
+    <logger name="discord4j.core" level="INFO"/>
+    <logger name="discord4j.gateway" level="INFO"/>
+    <logger name="io.netty" level="WARN"/>
+    <logger name="reactor" level="WARN"/>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>

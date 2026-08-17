@@ -1,0 +1,26 @@
+{
+  "name": "gag",
+  "description": "Changes a user's gag restraint.",
+  "type": 1,
+  "nsfw": true,
+  "options": [
+    {
+      "name": "target",
+      "description": "User to target.",
+      "type": 6,
+      "required": true
+    },
+    {
+      "name": "level",
+      "description": "Gag level.",
+      "type": 4,
+      "required": false,
+      "choices": [
+        { "name": "Remove", "value": 0 },
+        { "name": "Ball gag", "value": 1 },
+        { "name": "Bit gag", "value": 2 },
+        { "name": "Tape gag", "value": 3 }
+      ]
+    }
+  ]
+}
