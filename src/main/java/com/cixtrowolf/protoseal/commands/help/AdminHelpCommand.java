@@ -38,7 +38,9 @@ public class AdminHelpCommand implements SlashCommandInterface {
                                         + "`/consentreset target` — resets a user's consent to `self_only` "
                                         + "and removes their owner relationship.\n"
                                         + "`/safeword target` — removes another user's active restraints and locks "
-                                        + "in an emergency.\n\n"
+                                        + "in an emergency.\n"
+                                        + "`/channelconfig allow|unallow|block|unblock|list|clear` — controls where "
+                                        + "the bot can be used.\n\n"
                                         + "Administrator access never bypasses a user's normal consent settings.")
                                 .withEphemeral(true)
                         : event.reply("Only server administrators can use this command.").withEphemeral(true));

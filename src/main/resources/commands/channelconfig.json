@@ -1,0 +1,22 @@
+{
+  "name": "channelconfig",
+  "description": "Configures the channels where ProtoSeal can be used.",
+  "type": 1,
+  "default_member_permissions": "8",
+  "options": [
+    { "name": "allow", "description": "Adds a channel to the whitelist.", "type": 1, "options": [
+      { "name": "channel", "description": "Channel to allow.", "type": 7, "required": true }
+    ]},
+    { "name": "unallow", "description": "Removes a channel from the whitelist.", "type": 1, "options": [
+      { "name": "channel", "description": "Channel to remove from the whitelist.", "type": 7, "required": true }
+    ]},
+    { "name": "block", "description": "Adds a channel to the blacklist, including NSFW channels.", "type": 1, "options": [
+      { "name": "channel", "description": "Channel to block.", "type": 7, "required": true }
+    ]},
+    { "name": "unblock", "description": "Removes a channel from the blacklist.", "type": 1, "options": [
+      { "name": "channel", "description": "Channel to remove from the blacklist.", "type": 7, "required": true }
+    ]},
+    { "name": "list", "description": "Lists the whitelist and blacklist.", "type": 1 },
+    { "name": "clear", "description": "Clears both lists; NSFW channels remain allowed by default.", "type": 1 }
+  ]
+}
