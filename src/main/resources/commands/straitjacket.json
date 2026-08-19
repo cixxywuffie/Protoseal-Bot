@@ -17,8 +17,8 @@
       "required": false,
       "choices": [
         { "name": "Remove", "value": 0 },
-        { "name": "should strap", "value": 1 },
-        { "name": "front strap", "value": 2 },
+        { "name": "Shoulder strap", "value": 1 },
+        { "name": "Front strap", "value": 2 },
         { "name": "Back strap", "value": 3 }
       ]
     }
