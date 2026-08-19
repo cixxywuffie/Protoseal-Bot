@@ -18,6 +18,7 @@ class RestraintStateTest {
         state.updateLevel(0,"none");
 
         assertEquals(0, state.getLevel());
+        assertEquals("none", state.getName());
         assertFalse(state.isLocked());
         assertEquals(null, state.getLockType());
         assertEquals(null, state.getLockedByUserId());

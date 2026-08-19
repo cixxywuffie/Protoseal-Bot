@@ -119,6 +119,7 @@ class RestraintStateServiceTest {
         var captor = ArgumentCaptor.forClass(RestraintState.class);
         verify(repository).save(captor.capture());
         assertEquals(2, captor.getValue().getLevel());
+        assertEquals("puppy", captor.getValue().getName());
         assertEquals(RestraintLockType.PERMALOCK, captor.getValue().getLockType());
         assertEquals("locker", captor.getValue().getLockedByUserId());
     }
