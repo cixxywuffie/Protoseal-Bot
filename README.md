@@ -53,6 +53,7 @@ Consent is scoped to each Discord server. Administrators can use `/consentreset`
 | Command | Purpose |
 | --- | --- |
 | `/about` | Show information about ProtoSeal, its author and source code. |
+| `/donate` | Show the configured page for supporting ProtoSeal development. |
 | `/lock` | Apply or remove a lock across all active restraints. |
 | `/rdstatus` | Display a user's consent, active restraints and lock status. |
 | `/consent` | Configure the user's consent mode. |
@@ -68,6 +69,18 @@ channels, and `block` or `unblock` to maintain a blacklist. The blacklist takes 
 over NSFW channels. `/channelconfig list` shows both lists and `clear` resets them to the default
 NSFW-only behaviour. The NSFW status is checked dynamically, so changing it in Discord immediately
 updates the filter. `/channelconfig` and the safety command `/safeword` remain available outside it.
+
+### Donations
+
+The `/donate` command displays an optional HTTPS donation page configured by the instance operator.
+Set `DONATION_URL` before starting ProtoSeal:
+
+```powershell
+$env:DONATION_URL="https://ko-fi.com/your-page"
+```
+
+For Compose deployments, set `DONATION_URL` in the `.env` file. Donations are optional, help cover
+hosting and development costs, and do not grant any additional bot permissions or features.
 
 ## Requirements
 
