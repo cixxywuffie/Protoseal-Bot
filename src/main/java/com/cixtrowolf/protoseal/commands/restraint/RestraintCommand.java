@@ -41,7 +41,7 @@ public class RestraintCommand implements SlashCommandInterface {
             return event.reply("That restraint command is not available.").withEphemeral(true);
         }
 
-        int level = event.getOption("level")
+        int level = event.getOption("type")
                 .flatMap(ApplicationCommandInteractionOption::getValue)
                 .map(value -> Math.toIntExact(value.asLong()))
                 .orElse(1);
@@ -75,7 +75,7 @@ public class RestraintCommand implements SlashCommandInterface {
         String response = selfTarget ? selectedLevel.selfMessage() : selectedLevel.message();
 
         return Mono.fromCallable(() -> restraintStateService.saveState(
-                        guildId, target.getId().asString(), definition.getZone(), level, actor.getId().asString()))
+                        guildId, target.getId().asString(), definition.getZone(), level, actor.getId().asString(), selectedLevel.name()))
                 .subscribeOn(Schedulers.boundedElastic())
                 .flatMap(result -> switch (result) {
                     case UPDATED -> {

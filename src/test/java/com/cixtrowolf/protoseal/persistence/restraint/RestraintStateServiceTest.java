@@ -37,7 +37,7 @@ class RestraintStateServiceTest {
     void deniedConsentPreventsAnyStateLookupOrWrite() {
         when(consentService.canManageRestraints("guild", "target", "actor")).thenReturn(false);
 
-        var result = service.saveState("guild", "target", RestraintZone.GAG, 1, "actor");
+        var result = service.saveState("guild", "target", RestraintZone.GAG, 1, "actor", "ball gag");
 
         assertEquals(RestraintStateService.StateUpdateResult.CONSENT_DENIED, result);
         verify(repository, never()).findByGuildIdAndUserIdAndLevelGreaterThanOrderByZoneAsc(any(), any(), any(Integer.class));
@@ -47,14 +47,14 @@ class RestraintStateServiceTest {
     @Test
     void lockedRestraintCannotBeChangedEvenByItsLocker() {
         allowConsent();
-        var state = state(RestraintZone.GAG, 1);
+        var state = state(RestraintZone.GAG, 1, "ball gag");
         state.applyLock(RestraintLockType.PADLOCK, "actor");
         when(repository.findByGuildIdAndUserIdAndLevelGreaterThanOrderByZoneAsc("guild", "target", 0))
                 .thenReturn(List.of(state));
         when(repository.findByGuildIdAndUserIdAndZone("guild", "target", RestraintZone.GAG))
                 .thenReturn(Optional.of(state));
 
-        var result = service.saveState("guild", "target", RestraintZone.GAG, 0, "actor");
+        var result = service.saveState("guild", "target", RestraintZone.GAG, 0, "actor", "none");
 
         assertEquals(RestraintStateService.StateUpdateResult.LOCKED, result);
         assertEquals(1, state.getLevel());
@@ -63,11 +63,11 @@ class RestraintStateServiceTest {
     @Test
     void activeMittsPreventActivatingAnotherRestraint() {
         allowConsent();
-        var mitts = state(RestraintZone.MITTS, 1);
+        var mitts = state(RestraintZone.MITTS, 1, "default");
         when(repository.findByGuildIdAndUserIdAndLevelGreaterThanOrderByZoneAsc("guild", "target", 0))
                 .thenReturn(List.of(mitts));
 
-        var result = service.saveState("guild", "target", RestraintZone.GAG, 1, "actor");
+        var result = service.saveState("guild", "target", RestraintZone.GAG, 1, "actor", "default");
 
         assertEquals(RestraintStateService.StateUpdateResult.MITTS_ACTIVE, result);
         verify(repository, never()).findByGuildIdAndUserIdAndZone(any(), any(), any());
@@ -77,11 +77,11 @@ class RestraintStateServiceTest {
     @Test
     void activeMittsPreventAnotherRestraintFromBeingRemoved() {
         allowConsent();
-        var mitts = state(RestraintZone.MITTS, 1);
-        var gag = state(RestraintZone.GAG, 2);
+        var mitts = state(RestraintZone.MITTS, 1, "default");
+        var gag = state(RestraintZone.GAG, 2, "bit gag");
         when(repository.findByGuildIdAndUserIdAndLevelGreaterThanOrderByZoneAsc("guild", "target", 0))
                 .thenReturn(List.of(mitts, gag));
-        var result = service.saveState("guild", "target", RestraintZone.GAG, 0, "actor");
+        var result = service.saveState("guild", "target", RestraintZone.GAG, 0, "actor", "none");
 
         assertEquals(RestraintStateService.StateUpdateResult.MITTS_ACTIVE, result);
         assertEquals(2, gag.getLevel());
@@ -91,13 +91,13 @@ class RestraintStateServiceTest {
     @Test
     void activeMittsCanStillBeChangedOrRemoved() {
         allowConsent();
-        var mitts = state(RestraintZone.MITTS, 1);
+        var mitts = state(RestraintZone.MITTS, 1, "default");
         when(repository.findByGuildIdAndUserIdAndLevelGreaterThanOrderByZoneAsc("guild", "target", 0))
                 .thenReturn(List.of(mitts));
         when(repository.findByGuildIdAndUserIdAndZone("guild", "target", RestraintZone.MITTS))
                 .thenReturn(Optional.of(mitts));
 
-        var result = service.saveState("guild", "target", RestraintZone.MITTS, 0, "actor");
+        var result = service.saveState("guild", "target", RestraintZone.MITTS, 0, "actor", "none");
 
         assertEquals(RestraintStateService.StateUpdateResult.UPDATED, result);
         assertEquals(0, mitts.getLevel());
@@ -106,7 +106,7 @@ class RestraintStateServiceTest {
     @Test
     void restraintAddedDuringGlobalLockInheritsThatLock() {
         allowConsent();
-        var lockedState = state(RestraintZone.GAG, 1);
+        var lockedState = state(RestraintZone.GAG, 1, "ball gag");
         lockedState.applyLock(RestraintLockType.PERMALOCK, "locker");
         when(repository.findByGuildIdAndUserIdAndLevelGreaterThanOrderByZoneAsc("guild", "target", 0))
                 .thenReturn(List.of(lockedState));
@@ -114,7 +114,7 @@ class RestraintStateServiceTest {
                 .thenReturn(Optional.empty());
 
         assertEquals(RestraintStateService.StateUpdateResult.UPDATED,
-                service.saveState("guild", "target", RestraintZone.MITTS, 2, "actor"));
+                service.saveState("guild", "target", RestraintZone.MITTS, 2, "actor", "puppy"));
 
         var captor = ArgumentCaptor.forClass(RestraintState.class);
         verify(repository).save(captor.capture());
@@ -126,8 +126,8 @@ class RestraintStateServiceTest {
     @Test
     void applyingLockAffectsEveryActiveRestraint() {
         allowConsent();
-        var gag = state(RestraintZone.GAG, 1);
-        var mitts = state(RestraintZone.MITTS, 2);
+        var gag = state(RestraintZone.GAG, 1, "ball gag");
+        var mitts = state(RestraintZone.MITTS, 2, "puppy");
         when(repository.findByGuildIdAndUserIdAndLevelGreaterThanOrderByZoneAsc("guild", "target", 0))
                 .thenReturn(List.of(gag, mitts));
 
@@ -143,9 +143,9 @@ class RestraintStateServiceTest {
     @Test
     void foreignLockPreventsReplacingOrRemovingAnyLock() {
         allowConsent();
-        var foreign = state(RestraintZone.GAG, 1);
+        var foreign = state(RestraintZone.GAG, 1, "ball gag");
         foreign.applyLock(RestraintLockType.PADLOCK, "another-user");
-        var unlocked = state(RestraintZone.MITTS, 1);
+        var unlocked = state(RestraintZone.MITTS, 1, "default");
         when(repository.findByGuildIdAndUserIdAndLevelGreaterThanOrderByZoneAsc("guild", "target", 0))
                 .thenReturn(List.of(foreign, unlocked));
 
@@ -159,7 +159,7 @@ class RestraintStateServiceTest {
     @Test
     void permalockCannotBeRemovedOrReplacedEvenByItsLocker() {
         allowConsent();
-        var state = state(RestraintZone.GAG, 1);
+        var state = state(RestraintZone.GAG, 1, "ball gag");
         state.applyLock(RestraintLockType.PERMALOCK, "actor");
         when(repository.findByGuildIdAndUserIdAndLevelGreaterThanOrderByZoneAsc("guild", "target", 0))
                 .thenReturn(List.of(state));
@@ -182,8 +182,8 @@ class RestraintStateServiceTest {
     @Test
     void lockRemovalClearsAllLocksOwnedByActor() {
         allowConsent();
-        var gag = state(RestraintZone.GAG, 1);
-        var mitts = state(RestraintZone.MITTS, 1);
+        var gag = state(RestraintZone.GAG, 1,"ball gag");
+        var mitts = state(RestraintZone.MITTS, 1, "default");
         gag.applyLock(RestraintLockType.PADLOCK, "actor");
         mitts.applyLock(RestraintLockType.PADLOCK, "actor");
         when(repository.findByGuildIdAndUserIdAndLevelGreaterThanOrderByZoneAsc("guild", "target", 0))
@@ -207,7 +207,7 @@ class RestraintStateServiceTest {
 
     @Test
     void clearAndFindDelegateToTheScopedRepositoryOperations() {
-        var states = List.of(state(RestraintZone.GAG, 1));
+        var states = List.of(state(RestraintZone.GAG, 1, "ball gag"));
         when(repository.findByGuildIdAndUserIdAndLevelGreaterThanOrderByZoneAsc("guild", "target", 0))
                 .thenReturn(states);
 
@@ -221,7 +221,7 @@ class RestraintStateServiceTest {
         when(consentService.canManageRestraints("guild", "target", "actor")).thenReturn(true);
     }
 
-    private RestraintState state(RestraintZone zone, int level) {
-        return new RestraintState("guild", "target", zone, level);
+    private RestraintState state(RestraintZone zone, int level, String name) {
+        return new RestraintState("guild", "target", zone, level, name);
     }
 }

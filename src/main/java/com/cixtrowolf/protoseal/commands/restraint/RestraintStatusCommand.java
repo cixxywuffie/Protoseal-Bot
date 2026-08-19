@@ -86,7 +86,7 @@ public class RestraintStatusCommand implements SlashCommandInterface {
 
         states.forEach(state -> embed.addField(
                 state.getZone().getEmoji() + " " + state.getZone().getDisplayName(),
-                "Level `" + state.getLevel() + "`",
+                "Type `" + state.getName() + "`",
                 true));
 
         return embed.build();

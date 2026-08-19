@@ -11,15 +11,15 @@
       "required": true
     },
     {
-      "name": "level",
+      "name": "type",
       "description": "Hood level.",
       "type": 4,
       "required": false,
       "choices": [
         { "name": "Remove", "value": 0 },
-        { "name": "Leather hood", "value": 1 },
-        { "name": "Blindfold hood", "value": 2 },
-        { "name": "Full hood", "value": 3 }
+        { "name": "Gimp hood", "value": 1 },
+        { "name": "Gas mask", "value": 2 },
+        { "name": "Deprivation hood", "value": 3 }
       ]
     }
   ]

@@ -12,10 +12,10 @@ class RestraintStateTest {
 
     @Test
     void settingLevelToZeroAlsoRemovesItsLock() {
-        var state = new RestraintState("guild", "user", RestraintZone.GAG, 2);
+        var state = new RestraintState("guild", "user", RestraintZone.GAG, 2,"bit gag");
         state.applyLock(RestraintLockType.GLUE, "owner");
 
-        state.updateLevel(0);
+        state.updateLevel(0,"none");
 
         assertEquals(0, state.getLevel());
         assertFalse(state.isLocked());
@@ -25,7 +25,7 @@ class RestraintStateTest {
 
     @Test
     void lockIsActiveOnlyWhenTypeAndOwnerArePresent() {
-        var state = new RestraintState("guild", "user", RestraintZone.GAG, 1);
+        var state = new RestraintState("guild", "user", RestraintZone.GAG, 1,"ball gag");
 
         state.applyLock(RestraintLockType.SEWN, "owner");
         assertTrue(state.isLocked());

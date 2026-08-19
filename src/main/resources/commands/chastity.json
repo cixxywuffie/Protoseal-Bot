@@ -11,7 +11,7 @@
       "required": true
     },
     {
-      "name": "level",
+      "name": "type",
       "description": "Chastity type (cage by default).",
       "type": 4,
       "required": false,

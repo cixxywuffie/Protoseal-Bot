@@ -20,7 +20,7 @@ public class RestraintStateService {
     }
 
     @Transactional
-    public StateUpdateResult saveState(String guildId, String userId, RestraintZone zone, int level, String actorId) {
+    public StateUpdateResult saveState(String guildId, String userId, RestraintZone zone, int level, String actorId, String name) {
         if (!consentService.canManageRestraints(guildId, userId, actorId)) {
             return StateUpdateResult.CONSENT_DENIED;
         }
@@ -40,13 +40,13 @@ public class RestraintStateService {
             if (state.isLocked()) {
                 return StateUpdateResult.LOCKED;
             }
-            state.updateLevel(level);
+            state.updateLevel(level,name);
             if (level > 0 && activeLock.isPresent()) {
                 var lock = activeLock.get();
                 state.applyLock(lock.getLockType(), lock.getLockedByUserId());
             }
         } else {
-            var state = new RestraintState(guildId, userId, zone, level);
+            var state = new RestraintState(guildId, userId, zone, level, name);
             if (level > 0 && activeLock.isPresent()) {
                 var lock = activeLock.get();
                 state.applyLock(lock.getLockType(), lock.getLockedByUserId());
