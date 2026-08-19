@@ -1,6 +1,6 @@
 {
   "name": "help",
-  "description": "Muestra los comandos disponibles.",
+  "description": "Shows the available commands.",
   "type": 1,
   "nsfw": true
 }

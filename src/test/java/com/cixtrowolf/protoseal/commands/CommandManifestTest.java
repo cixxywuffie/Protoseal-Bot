@@ -23,7 +23,7 @@ class CommandManifestTest {
             "armcuffs", "blindfold", "chastity", "gag", "help", "hood", "legcuffs",
             "lock", "mitts", "rdstatus", "straitjacket", "suits");
     private static final Set<String> COMMANDS = Set.of(
-            "about", "adminhelp", "armcuffs", "blindfold", "chastity", "consent", "consentreset",
+            "about", "adminhelp", "armcuffs", "blindfold", "chastity", "consent", "consentreset", "donate",
             "gag", "help", "hood", "legcuffs", "lock", "mitts", "rdstatus", "safeword",
             "straitjacket", "suits");
     private final ObjectMapper mapper = new ObjectMapper();

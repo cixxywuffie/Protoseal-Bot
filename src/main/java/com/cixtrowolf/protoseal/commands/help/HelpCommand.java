@@ -20,6 +20,7 @@ public class HelpCommand implements SlashCommandInterface {
                 + "`/consent mode [owner]` — configures who can manage your restraints.\n"
                 + "`/adminhelp` — shows administrator commands.\n"
                 + "`/armcuffs target level` — changes arm restraints.\n"
+                + "`/donate` — shows information for donate to the project.\n"
                 + "`/legcuffs target level` — changes leg restraints.\n"
                 + "`/gag target level` — changes gag restraints.\n"
                 + "`/hood target level` — changes hood restraints.\n"
