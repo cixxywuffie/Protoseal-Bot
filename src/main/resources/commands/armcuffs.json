@@ -11,15 +11,15 @@
       "required": true
     },
     {
-      "name": "level",
+      "name": "type",
       "description": "Restraint level.",
       "type": 4,
       "required": false,
       "choices": [
         { "name": "Release", "value": 0 },
-        { "name": "Light", "value": 1 },
-        { "name": "Medium", "value": 2 },
-        { "name": "Intense", "value": 3 }
+        { "name": "Armbinder", "value": 1 },
+        { "name": "Cuffs", "value": 2 },
+        { "name": "Rope", "value": 3 }
       ]
     }
   ]

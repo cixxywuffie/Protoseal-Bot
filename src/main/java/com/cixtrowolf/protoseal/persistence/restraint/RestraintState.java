@@ -51,19 +51,24 @@ public class RestraintState {
     @Column(name = "locked_by_user_id", length = 32)
     private String lockedByUserId;
 
+    @Column(nullable = false)
+    private String name;
+
     protected RestraintState() {
     }
 
-    public RestraintState(String guildId, String userId, RestraintZone zone, int level) {
+    public RestraintState(String guildId, String userId, RestraintZone zone, int level, String name) {
         this.guildId = guildId;
         this.userId = userId;
         this.zone = zone;
         this.level = level;
+        this.name = name;
         this.updatedAt = Instant.now();
     }
 
-    public void updateLevel(int level) {
+    public void updateLevel(int level, String name) {
         this.level = level;
+        this.name = name;
         if (level == 0) {
             removeLock();
         }
@@ -88,6 +93,10 @@ public class RestraintState {
 
     public int getLevel() {
         return level;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public RestraintLockType getLockType() {

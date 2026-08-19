@@ -18,8 +18,8 @@
       "choices": [
         { "name": "Remove", "value": 0 },
         { "name": "Latex", "value": 1 },
-        { "name": "Enclosed", "value": 2 },
-        { "name": "Full body", "value": 3 }
+        { "name": "Plush", "value": 2 },
+        { "name": "Gimp", "value": 3 }
       ]
     }
   ]

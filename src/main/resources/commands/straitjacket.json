@@ -11,15 +11,15 @@
       "required": true
     },
     {
-      "name": "level",
+      "name": "type",
       "description": "Straitjacket level.",
       "type": 4,
       "required": false,
       "choices": [
         { "name": "Remove", "value": 0 },
-        { "name": "Canvas", "value": 1 },
-        { "name": "Padlocked", "value": 2 },
-        { "name": "Full", "value": 3 }
+        { "name": "should strap", "value": 1 },
+        { "name": "front strap", "value": 2 },
+        { "name": "Back strap", "value": 3 }
       ]
     }
   ]
