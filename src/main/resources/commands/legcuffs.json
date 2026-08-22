@@ -17,9 +17,11 @@
       "required": false,
       "choices": [
         { "name": "Release", "value": 0 },
-        { "name": "Cuffs", "value": 1 },
-        { "name": "Spreader bar", "value": 2 },
-        { "name": "Hobbles", "value": 3 }
+        { "name": "Loose cuffs", "value": 1 }, { "name": "Taut cuffs", "value": 2 },
+        { "name": "Standing hobble", "value": 3 }, { "name": "Kneeling tie", "value": 4 },
+        { "name": "Frog tie", "value": 5 }, { "name": "Seated tie", "value": 6 },
+        { "name": "Spreader bar", "value": 7 }, { "name": "Hogtie", "value": 8 },
+        { "name": "Side hogtie", "value": 9 }, { "name": "Strict hogtie", "value": 10 }
       ]
     }
   ]

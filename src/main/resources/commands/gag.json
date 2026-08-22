@@ -19,7 +19,11 @@
         { "name": "Remove", "value": 0 },
         { "name": "Ball gag", "value": 1 },
         { "name": "Bit gag", "value": 2 },
-        { "name": "Tape gag", "value": 3 }
+        { "name": "Tape gag", "value": 3 }, { "name": "Wire muzzle", "value": 4 },
+        { "name": "Leather muzzle", "value": 5 }, { "name": "Ring gag", "value": 6 },
+        { "name": "Sock gag", "value": 7 }, { "name": "Pacifier gag", "value": 8 },
+        { "name": "Panel gag", "value": 9 }, { "name": "Inflatable gag", "value": 10 },
+        { "name": "Reindeer muzzle", "value": 11 }
       ]
     }
   ]

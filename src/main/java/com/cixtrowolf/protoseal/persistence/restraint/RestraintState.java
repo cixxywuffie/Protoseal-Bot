@@ -51,6 +51,9 @@ public class RestraintState {
     @Column(name = "locked_by_user_id", length = 32)
     private String lockedByUserId;
 
+    @Column(name = "lock_expires_at")
+    private Instant lockExpiresAt;
+
     @Column(nullable = false)
     private String name;
 
@@ -78,12 +81,21 @@ public class RestraintState {
     public void applyLock(RestraintLockType lockType, String lockedByUserId) {
         this.lockType = lockType;
         this.lockedByUserId = lockedByUserId;
+        this.lockExpiresAt = null;
+        this.updatedAt = Instant.now();
+    }
+
+    public void applyTimelock(String lockedByUserId, Instant expiresAt) {
+        this.lockType = RestraintLockType.TIMELOCK;
+        this.lockedByUserId = lockedByUserId;
+        this.lockExpiresAt = expiresAt;
         this.updatedAt = Instant.now();
     }
 
     public void removeLock() {
         this.lockType = null;
         this.lockedByUserId = null;
+        this.lockExpiresAt = null;
         this.updatedAt = Instant.now();
     }
 
@@ -107,7 +119,13 @@ public class RestraintState {
         return lockedByUserId;
     }
 
+    public Instant getLockExpiresAt() {
+        return lockExpiresAt;
+    }
+
     public boolean isLocked() {
-        return lockType != null && lockedByUserId != null;
+        return lockType != null && lockedByUserId != null
+                && (lockType != RestraintLockType.TIMELOCK
+                || lockExpiresAt != null && lockExpiresAt.isAfter(Instant.now()));
     }
 }

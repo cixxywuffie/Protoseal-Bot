@@ -19,7 +19,10 @@
         { "name": "Remove", "value": 0 },
         { "name": "Gimp hood", "value": 1 },
         { "name": "Gas mask", "value": 2 },
-        { "name": "Deprivation hood", "value": 3 }
+        { "name": "Deprivation hood", "value": 3 }, { "name": "Open-face hood", "value": 4 },
+        { "name": "Bondage hood", "value": 5 }, { "name": "Puppy hood", "value": 6 },
+        { "name": "Kitty hood", "value": 7 }, { "name": "Drone hood", "value": 8 },
+        { "name": "Pony hood", "value": 9 }
       ]
     }
   ]
