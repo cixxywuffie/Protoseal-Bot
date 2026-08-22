@@ -16,7 +16,7 @@ class RestraintDefinitionTest {
     void exposesEveryRegisteredRestraintCommand() {
         Set<String> expectedCommands = Set.of(
                 "armcuffs", "legcuffs", "gag", "hood", "straitjacket",
-                "suits", "mitts", "chastity", "blindfold");
+                "suits", "mitts", "chastity", "blindfold", "collar", "confine", "encase");
 
         Set<String> actualCommands = Stream.of(RestraintDefinition.values())
                 .map(RestraintDefinition::getCommandName)
@@ -27,10 +27,10 @@ class RestraintDefinitionTest {
     }
 
     @Test
-    void everyDefinitionRetainsTheFourExistingLevels() {
+    void everyDefinitionHasUsableLevels() {
         Stream.of(RestraintDefinition.values())
                 .forEach(definition -> {
-                    assertEquals(3, definition.getMaximumLevel());
+                    assertTrue(definition.getMaximumLevel() >= 3);
                     for (int level = 0; level <= definition.getMaximumLevel(); level++) {
                         assertFalse(definition.getLevel(level).message().isBlank());
                         assertFalse(definition.getLevel(level).selfMessage().isBlank());

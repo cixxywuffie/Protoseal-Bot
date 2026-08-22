@@ -17,9 +17,10 @@
       "required": false,
       "choices": [
         { "name": "Remove", "value": 0 },
-        { "name": "default", "value": 1 },
+        { "name": "Leather", "value": 1 },
         { "name": "Bandage", "value": 2 },
-        { "name": "Blind goggles", "value": 3 }
+        { "name": "Blind goggles", "value": 3 }, { "name": "Paneled blindfold", "value": 4 },
+        { "name": "Opaque contacts", "value": 5 }
       ]
     }
   ]

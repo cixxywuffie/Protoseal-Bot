@@ -11,15 +11,21 @@
       "required": true
     },
     {
-      "name": "level",
-      "description": "Suit level.",
+      "name": "type",
+      "description": "Suit type.",
       "type": 4,
       "required": false,
       "choices": [
         { "name": "Remove", "value": 0 },
         { "name": "Latex", "value": 1 },
         { "name": "Plush", "value": 2 },
-        { "name": "Gimp", "value": 3 }
+        { "name": "Gimp", "value": 3 }, { "name": "Puppy", "value": 4 },
+        { "name": "Kitty", "value": 5 }, { "name": "Pony", "value": 6 },
+        { "name": "Drone", "value": 7 }, { "name": "Cow", "value": 8 },
+        { "name": "Catsuit", "value": 9 }, { "name": "Reindeer", "value": 10 },
+        { "name": "Toy suit", "value": 11 }, { "name": "Bitchsuit", "value": 12 },
+        { "name": "Hogsack", "value": 13 }, { "name": "Sleepsack", "value": 14 },
+        { "name": "Sleeper suit", "value": 15 }
       ]
     }
   ]

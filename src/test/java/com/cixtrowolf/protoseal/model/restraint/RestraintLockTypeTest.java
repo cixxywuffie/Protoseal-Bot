@@ -13,7 +13,7 @@ class RestraintLockTypeTest {
 
     @Test
     void exposesEverySupportedLockType() {
-        Set<String> expected = Set.of("PADLOCK", "GLUE", "SEWN", "TAPE", "PERMALOCK");
+        Set<String> expected = Set.of("PADLOCK", "GLUE", "SEWN", "TAPE", "PERMALOCK", "TIMELOCK");
         Set<String> actual = Stream.of(RestraintLockType.values())
                 .map(Enum::name)
                 .collect(Collectors.toSet());

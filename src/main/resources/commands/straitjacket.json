@@ -19,7 +19,9 @@
         { "name": "Remove", "value": 0 },
         { "name": "Shoulder strap", "value": 1 },
         { "name": "Front strap", "value": 2 },
-        { "name": "Back strap", "value": 3 }
+        { "name": "Back strap", "value": 3 }, { "name": "Front sleeves", "value": 4 },
+        { "name": "Reverse sleeves", "value": 5 }, { "name": "Single crotch strap", "value": 6 },
+        { "name": "Double crotch strap", "value": 7 }, { "name": "Triple crotch strap", "value": 8 }
       ]
     }
   ]

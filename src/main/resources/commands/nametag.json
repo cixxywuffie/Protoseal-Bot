@@ -1,0 +1,7 @@
+{
+  "name": "nametag", "description": "Sets a name tag shown in restraint status.", "type": 1, "nsfw": true,
+  "options": [
+    { "name": "target", "description": "User to target.", "type": 6, "required": true },
+    { "name": "label", "description": "Name tag text; omit it to remove the tag.", "type": 3, "required": false, "max_length": 64 }
+  ]
+}

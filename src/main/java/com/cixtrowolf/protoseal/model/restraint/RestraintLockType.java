@@ -5,7 +5,8 @@ public enum RestraintLockType {
     GLUE("Glue", "🧴"),
     SEWN("Sewn", "🪡"),
     TAPE("Tape", "📼"),
-    PERMALOCK("Permalock", "♾️");
+    PERMALOCK("Permalock", "♾️"),
+    TIMELOCK("Timelock", "⏳");
 
     private final String displayName;
     private final String emoji;

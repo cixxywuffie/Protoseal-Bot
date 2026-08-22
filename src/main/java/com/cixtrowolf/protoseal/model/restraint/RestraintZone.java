@@ -11,7 +11,12 @@ public enum RestraintZone {
     SUIT(6, "Suit", "🥻"),
     MITTS(7, "Mitts", "🧤"),
     CHASTITY(8, "Chastity", "🔐"),
-    BLINDFOLD(9, "Blindfold", "🙈");
+    BLINDFOLD(9, "Blindfold", "🙈"),
+    COLLAR(10, "Collar", "📿"),
+    CONFINE(11, "Confinement", "🚪"),
+    NAMETAG(12, "Name tag", "🏷️"),
+    LEASH(13, "Leash", "🦮"),
+    ENCASE(14, "Encasement", "🗿");
 
     private final int databaseId;
     private final String displayName;

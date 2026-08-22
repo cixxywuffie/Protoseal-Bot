@@ -19,7 +19,8 @@
         { "name": "Remove", "value": 0 },
         { "name": "Mittens", "value": 1 },
         { "name": "Puppy paws", "value": 2 },
-        { "name": "Horse hooves", "value": 3 }
+        { "name": "Horse hooves", "value": 3 }, { "name": "Cow hooves", "value": 4 },
+        { "name": "Ducky mitts", "value": 5 }
       ]
     }
   ]

@@ -18,8 +18,12 @@
       "choices": [
         { "name": "Release", "value": 0 },
         { "name": "Armbinder", "value": 1 },
-        { "name": "Cuffs", "value": 2 },
-        { "name": "Rope", "value": 3 }
+        { "name": "Behind back", "value": 2 }, { "name": "Behind tight", "value": 3 },
+        { "name": "Behind belt", "value": 4 }, { "name": "Behind T-belt", "value": 5 },
+        { "name": "Elbows", "value": 6 }, { "name": "Front cuffs", "value": 7 },
+        { "name": "Front belt", "value": 8 }, { "name": "Reverse prayer", "value": 9 },
+        { "name": "At sides", "value": 10 }, { "name": "Sides tight", "value": 11 },
+        { "name": "Wrapped lights", "value": 12 }
       ]
     }
   ]
