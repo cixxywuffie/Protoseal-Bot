@@ -7,6 +7,8 @@ import com.cixtrowolf.protoseal.model.restraint.RestraintZone;
 import com.cixtrowolf.protoseal.model.restraint.RestraintLockType;
 
 import java.util.List;
+import java.time.Duration;
+import java.time.Instant;
 
 @Service
 public class RestraintStateService {
@@ -43,17 +45,25 @@ public class RestraintStateService {
             state.updateLevel(level,name);
             if (level > 0 && activeLock.isPresent()) {
                 var lock = activeLock.get();
-                state.applyLock(lock.getLockType(), lock.getLockedByUserId());
+                inheritLock(state, lock);
             }
         } else {
             var state = new RestraintState(guildId, userId, zone, level, name);
             if (level > 0 && activeLock.isPresent()) {
                 var lock = activeLock.get();
-                state.applyLock(lock.getLockType(), lock.getLockedByUserId());
+                inheritLock(state, lock);
             }
             repository.save(state);
         }
         return StateUpdateResult.UPDATED;
+    }
+
+    private void inheritLock(RestraintState state, RestraintState source) {
+        if (source.getLockType() == RestraintLockType.TIMELOCK) {
+            state.applyTimelock(source.getLockedByUserId(), source.getLockExpiresAt());
+        } else {
+            state.applyLock(source.getLockType(), source.getLockedByUserId());
+        }
     }
 
     @Transactional
@@ -68,6 +78,9 @@ public class RestraintStateService {
         if (states.stream().anyMatch(state -> state.getLockType() == RestraintLockType.PERMALOCK)) {
             return LockResult.PERMALOCKED;
         }
+        if (states.stream().anyMatch(state -> state.getLockType() == RestraintLockType.TIMELOCK && state.isLocked())) {
+            return LockResult.TIMELOCKED;
+        }
         if (states.stream().anyMatch(state -> state.isLocked()
                 && !state.getLockedByUserId().equals(actorId))) {
             return LockResult.LOCKED_BY_ANOTHER_USER;
@@ -81,6 +94,26 @@ public class RestraintStateService {
         }
         states.forEach(state -> state.applyLock(lockType, actorId));
         return LockResult.APPLIED;
+    }
+
+    @Transactional
+    public TimelockResult applyTimelock(String guildId, String userId, String actorId, Duration duration) {
+        if (!consentService.canManageRestraints(guildId, userId, actorId)) {
+            return TimelockResult.CONSENT_DENIED;
+        }
+        if (duration.isNegative() || duration.isZero() || duration.compareTo(Duration.ofDays(30)) > 0) {
+            return TimelockResult.INVALID_DURATION;
+        }
+        var states = repository.findByGuildIdAndUserIdAndLevelGreaterThanOrderByZoneAsc(guildId, userId, 0);
+        if (states.isEmpty()) return TimelockResult.NO_ACTIVE_RESTRAINT;
+        if (states.stream().anyMatch(state -> state.getLockType() == RestraintLockType.PERMALOCK)) {
+            return TimelockResult.PERMALOCKED;
+        }
+        if (states.stream().anyMatch(RestraintState::isLocked)) return TimelockResult.ALREADY_LOCKED;
+
+        Instant expiresAt = Instant.now().plus(duration);
+        states.forEach(state -> state.applyTimelock(actorId, expiresAt));
+        return TimelockResult.APPLIED;
     }
 
     @Transactional
@@ -99,6 +132,7 @@ public class RestraintStateService {
         NO_ACTIVE_RESTRAINT,
         NOT_LOCKED,
         PERMALOCKED,
+        TIMELOCKED,
         LOCKED_BY_ANOTHER_USER,
         CONSENT_DENIED
     }
@@ -108,5 +142,9 @@ public class RestraintStateService {
         LOCKED,
         MITTS_ACTIVE,
         CONSENT_DENIED
+    }
+
+    public enum TimelockResult {
+        APPLIED, NO_ACTIVE_RESTRAINT, ALREADY_LOCKED, PERMALOCKED, INVALID_DURATION, CONSENT_DENIED
     }
 }

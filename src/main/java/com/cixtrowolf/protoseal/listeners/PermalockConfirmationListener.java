@@ -72,6 +72,7 @@ public class PermalockConfirmationListener {
         String message = switch (result) {
             case NO_ACTIVE_RESTRAINT -> "Permalock was not applied because that user has no active restraints.";
             case PERMALOCKED -> "That user's restraints are already permanently locked.";
+            case TIMELOCKED -> "That user's restraints are currently timelocked.";
             case LOCKED_BY_ANOTHER_USER -> "Permalock was not applied because another user owns the active lock.";
             case CONSENT_DENIED -> "Permalock was not applied because the user's consent settings no longer allow it.";
             case NOT_LOCKED, REMOVED -> "Permalock could not be applied because the restraint state changed.";

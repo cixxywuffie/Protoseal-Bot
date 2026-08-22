@@ -1,0 +1,9 @@
+{
+  "name": "leash", "description": "Attaches or removes a user's leash.", "type": 1, "nsfw": true,
+  "options": [
+    { "name": "target", "description": "User to target.", "type": 6, "required": true },
+    { "name": "action", "description": "Whether to attach or remove the leash.", "type": 3, "required": false, "choices": [
+      { "name": "Attach and hold", "value": "ATTACH" }, { "name": "Remove", "value": "REMOVE" }
+    ] }
+  ]
+}

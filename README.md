@@ -73,7 +73,7 @@ updates the filter. `/channelconfig` and the safety command `/safeword` remain a
 ### Donations
 
 The `/donate` command displays an optional HTTPS donation page configured by the instance operator.
-Set `DONATION_URL` before starting ProtoSeal:
+Optionally set `DONATION_URL` before starting ProtoSeal:
 
 ```powershell
 $env:DONATION_URL="https://ko-fi.com/your-page"

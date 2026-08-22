@@ -19,7 +19,7 @@
         { "name": "Remove", "value": 0 },
         { "name": "Cage", "value": 1 },
         { "name": "Belt", "value": 2 },
-        { "name": "Null bulge", "value": 3 }
+        { "name": "Null bulge", "value": 3 }, { "name": "Udder", "value": 4 }
       ]
     }
   ]

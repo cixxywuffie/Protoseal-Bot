@@ -12,6 +12,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 import java.util.Optional;
+import java.time.Duration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -204,6 +205,48 @@ class RestraintStateServiceTest {
 
         assertEquals(RestraintStateService.LockResult.NO_ACTIVE_RESTRAINT,
                 service.updateLocks("guild", "target", RestraintLockType.PADLOCK, "actor"));
+    }
+
+    @Test
+    void timelockAppliesAnExpiringLockToEveryActiveRestraint() {
+        allowConsent();
+        var gag = state(RestraintZone.GAG, 1, "ball gag");
+        var collar = state(RestraintZone.COLLAR, 1, "leather");
+        when(repository.findByGuildIdAndUserIdAndLevelGreaterThanOrderByZoneAsc("guild", "target", 0))
+                .thenReturn(List.of(gag, collar));
+
+        assertEquals(RestraintStateService.TimelockResult.APPLIED,
+                service.applyTimelock("guild", "target", "actor", Duration.ofMinutes(20)));
+        assertEquals(RestraintLockType.TIMELOCK, gag.getLockType());
+        assertTrue(gag.isLocked());
+        assertEquals(gag.getLockExpiresAt(), collar.getLockExpiresAt());
+    }
+
+    @Test
+    void timelockRejectsUnsafeDurationAndExistingLock() {
+        allowConsent();
+        assertEquals(RestraintStateService.TimelockResult.INVALID_DURATION,
+                service.applyTimelock("guild", "target", "actor", Duration.ofDays(31)));
+
+        var gag = state(RestraintZone.GAG, 1, "ball gag");
+        gag.applyLock(RestraintLockType.PADLOCK, "actor");
+        when(repository.findByGuildIdAndUserIdAndLevelGreaterThanOrderByZoneAsc("guild", "target", 0))
+                .thenReturn(List.of(gag));
+        assertEquals(RestraintStateService.TimelockResult.ALREADY_LOCKED,
+                service.applyTimelock("guild", "target", "actor", Duration.ofMinutes(15)));
+    }
+
+    @Test
+    void activeTimelockCannotBeRemovedWithRegularLockCommand() {
+        allowConsent();
+        var gag = state(RestraintZone.GAG, 1, "ball gag");
+        gag.applyTimelock("actor", java.time.Instant.now().plus(Duration.ofMinutes(10)));
+        when(repository.findByGuildIdAndUserIdAndLevelGreaterThanOrderByZoneAsc("guild", "target", 0))
+                .thenReturn(List.of(gag));
+
+        assertEquals(RestraintStateService.LockResult.TIMELOCKED,
+                service.updateLocks("guild", "target", null, "actor"));
+        assertTrue(gag.isLocked());
     }
 
     @Test

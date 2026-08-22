@@ -16,6 +16,8 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 import java.util.List;
+import java.time.Duration;
+import java.time.Instant;
 
 @Component
 public class RestraintStatusCommand implements SlashCommandInterface {
@@ -79,8 +81,7 @@ public class RestraintStatusCommand implements SlashCommandInterface {
                 .ifPresentOrElse(
                         state -> embed.addField(
                                 "🔐 Lock status",
-                                state.getLockType().getEmoji() + " **" + state.getLockType().getDisplayName()
-                                        + "** by <@" + state.getLockedByUserId() + ">",
+                                formatLock(state),
                                 false),
                         () -> embed.addField("🔓 Lock status", "Unlocked", false));
 
@@ -90,6 +91,16 @@ public class RestraintStatusCommand implements SlashCommandInterface {
                 true));
 
         return embed.build();
+    }
+
+    private String formatLock(RestraintState state) {
+        String value = state.getLockType().getEmoji() + " **" + state.getLockType().getDisplayName()
+                + "** by <@" + state.getLockedByUserId() + ">";
+        if (state.getLockExpiresAt() == null) return value;
+        long seconds = Math.max(0, Duration.between(Instant.now(), state.getLockExpiresAt()).toSeconds());
+        long hours = seconds / 3600;
+        long minutes = (seconds % 3600 + 59) / 60;
+        return value + " — " + (hours > 0 ? hours + "h " : "") + minutes + "m remaining";
     }
 
     private String formatConsent(ConsentService.ConsentStatus consent) {

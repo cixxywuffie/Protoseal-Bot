@@ -21,11 +21,12 @@ class CommandManifestTest {
 
     private static final Set<String> NSFW_COMMANDS = Set.of(
             "armcuffs", "blindfold", "chastity", "gag", "help", "hood", "legcuffs",
-            "lock", "mitts", "rdstatus", "straitjacket", "suits");
+            "lock", "mitts", "rdstatus", "straitjacket", "suits", "collar", "confine",
+            "nametag", "leash", "timelock", "encase");
     private static final Set<String> COMMANDS = Set.of(
             "about", "adminhelp", "armcuffs", "blindfold", "channelconfig", "chastity", "consent", "consentreset", "donate",
             "gag", "help", "hood", "legcuffs", "lock", "mitts", "rdstatus", "safeword",
-            "straitjacket", "suits");
+            "straitjacket", "suits", "collar", "confine", "nametag", "leash", "timelock", "encase");
     private final ObjectMapper mapper = new ObjectMapper();
 
     @Test
@@ -56,7 +57,7 @@ class CommandManifestTest {
         for (RestraintDefinition definition : RestraintDefinition.values()) {
             JsonNode manifest = readManifest(definition.getCommandName());
             JsonNode target = findOption(manifest, "target");
-            JsonNode level = findOption(manifest, "level");
+            JsonNode level = findOption(manifest, "type");
 
             assertEquals(6, target.path("type").asInt());
             assertTrue(target.path("required").asBoolean());
@@ -76,7 +77,9 @@ class CommandManifestTest {
 
         Set<String> expectedValues = Stream.concat(
                         Stream.of("REMOVE"),
-                        Stream.of(RestraintLockType.values()).map(Enum::name))
+                        Stream.of(RestraintLockType.values())
+                                .filter(type -> type != RestraintLockType.TIMELOCK)
+                                .map(Enum::name))
                 .collect(java.util.stream.Collectors.toSet());
 
         assertEquals(expectedValues, registeredValues);

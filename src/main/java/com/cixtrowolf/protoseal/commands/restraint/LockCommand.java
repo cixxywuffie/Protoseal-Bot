@@ -110,6 +110,9 @@ public class LockCommand implements SlashCommandInterface {
             case PERMALOCKED -> event.reply(
                             "That user's restraints are permanently locked. Only `/safeword` can clear them.")
                     .withEphemeral(true);
+            case TIMELOCKED -> event.reply(
+                            "That user's restraints are timelocked until the displayed expiry. Only `/safeword` can clear them early.")
+                    .withEphemeral(true);
             case LOCKED_BY_ANOTHER_USER -> event.reply("Only the user who applied these locks can change or remove them.")
                     .withEphemeral(true);
             case CONSENT_DENIED -> event.reply(
