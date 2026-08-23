@@ -13,8 +13,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 @SpringBootTest(properties = {
 		"bot.token=context-test-token",
 		"spring.datasource.url=jdbc:h2:mem:context-test;DB_CLOSE_DELAY=-1",
-		"spring.jpa.hibernate.ddl-auto=create-drop",
-		"spring.jpa.open-in-view=false"
+		"spring.jpa.hibernate.ddl-auto=create-drop"
 })
 class ProtoSealApplicationTests {
 
