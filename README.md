@@ -106,7 +106,8 @@ Never commit the bot token to Git. ProtoSeal reads it from the `BOT_TOKEN` envir
 
 ## Running locally
 
-Clone the repository and set the token in your shell.
+Clone the repository and set the token in your shell. When no active profile is supplied, Spring uses
+the `local` profile and stores data in the file-based H2 database.
 
 PowerShell:
 
@@ -123,6 +124,30 @@ export BOT_TOKEN="your-discord-bot-token"
 ```
 
 Slash-command manifests from `src/main/resources/commands` are registered globally when the bot starts. Discord may take some time to propagate global command changes.
+
+### Environment configuration
+
+Docker Compose injects deployment values from `.env` into the ProtoSeal container. Copy `.env.example`
+to `.env` and keep the resulting file outside version control. Compose requires `BOT_TOKEN`, `DB_NAME`,
+`DB_URL`, `DB_USERNAME`, `DB_PASSWORD` and `DB_ROOT_PASSWORD`; it does not provide fallback credentials.
+`DB_URL` uses `mariadb` as its host because that is the database service name on the internal Compose
+network. If `DB_NAME` changes, update the database name at the end of `DB_URL` as well.
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `BOT_TOKEN` | Required | Discord bot token. |
+| `DONATION_URL` | Empty | Optional HTTPS donation page used by `/donate`. |
+| `APP_NAME` | `ProtoSeal` | Spring application name. |
+| `SPRING_PROFILES_ACTIVE` | `development` | Active Spring profile. |
+| `DB_NAME` | Required by Compose | MariaDB database created by Compose. |
+| `DB_URL` | Required by Compose | JDBC URL; the example uses `jdbc:mariadb://mariadb:3306/protoseal_dev`. |
+| `DB_USERNAME` | Required by Compose | Application and MariaDB username. |
+| `DB_PASSWORD` | Required by Compose | Application database password. |
+| `DB_ROOT_PASSWORD` | Required by Compose | MariaDB administrative password. |
+| `JPA_DDL_AUTO` | `update` | Hibernate schema policy for development. |
+| `HIBERNATE_JDBC_TIME_ZONE` | `UTC` | JDBC time zone used by Hibernate. |
+| `APP_LOG_LEVEL` | `INFO` | ProtoSeal application log level. |
+| `JAVA_TOOL_OPTIONS` | `-XX:MaxRAMPercentage=75.0` | JVM options applied inside the bot container. |
 
 ## Local database
 
@@ -162,11 +187,15 @@ Available Spring profiles:
 
 | Profile | Database | Intended use |
 | --- | --- | --- |
-| default | Local file-based H2 | IDE and individual local development |
+| `local` (default) | Local file-based H2 | IntelliJ and individual local development |
 | `development` | MariaDB | Shared development server or Compose |
 | `production` | MariaDB | Production container with externally supplied secrets |
 
-For production, run the image with `SPRING_PROFILES_ACTIVE=production` and provide `BOT_TOKEN`, `DB_URL`, `DB_USERNAME` and `DB_PASSWORD`. The production profile currently defaults `JPA_DDL_AUTO` to `update`; move to versioned migrations and set it to `validate` before a public launch.
+For production, run the image with `SPRING_PROFILES_ACTIVE=production` and provide at least `BOT_TOKEN`
+and `DB_PASSWORD`. By default, the profile connects to the `mariadb` service from Compose using the
+`protoseal_dev` database and `protoseal` user. Set `DB_URL` and, when needed, `DB_USERNAME` in `.env`
+to use an external MariaDB instance instead. The production profile currently defaults `JPA_DDL_AUTO`
+to `update`; move to versioned migrations and set it to `validate` before a public launch.
 
 ## Tests
 
