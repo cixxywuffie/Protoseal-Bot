@@ -22,14 +22,10 @@ services:
     depends_on:
       mariadb:
         condition: service_healthy
+    env_file:
+      - .env
     environment:
-      BOT_TOKEN: ${BOT_TOKEN}
       DB_URL: ${DB_URL}${DB_NAME}
-      DONATION_URL: ${DONATION_URL}
-      JPA_DDL_AUTO: ${JPA_DDL_AUTO}
-      HIBERNATE_JDBC_TIME_ZONE: ${HIBERNATE_JDBC_TIME_ZONE}
-      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
-      APP_LOG_LEVEL: ${APP_LOG_LEVEL}
 
 
 volumes:
