@@ -1,0 +1,36 @@
+services:
+  mariadb:
+    image: mariadb:11.4
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: ${DB_NAME}
+      MARIADB_USER: ${DB_USERNAME}
+      MARIADB_PASSWORD: ${DB_PASSWORD}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    volumes:
+      - mariadb-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  protoseal:
+    build:
+      context: .
+    restart: unless-stopped
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    environment:
+      BOT_TOKEN: ${BOT_TOKEN}
+      DB_URL: ${DB_URL}${DB_NAME}
+      DONATION_URL: ${DONATION_URL}
+      JPA_DDL_AUTO: ${JPA_DDL_AUTO}
+      HIBERNATE_JDBC_TIME_ZONE: ${HIBERNATE_JDBC_TIME_ZONE}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
+      APP_LOG_LEVEL: ${APP_LOG_LEVEL}
+
+
+volumes:
+  mariadb-data:
