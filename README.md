@@ -9,9 +9,10 @@ Created by [CixtroWolf](https://bsky.app/profile/cixtrowolf.com).
 
 ## Features
 
-- Nine restraint categories with multiple levels.
-- Global locks using padlocks, glue, sewing, tape or an irreversible permalock.
-- Permalocks can only be cleared through `/safeword`.
+- Fourteen persistent restraint and roleplay-state categories, many with expanded MuzzledFox-inspired types.
+- Global locks using padlocks, glue, sewing, tape, fixed-duration timelocks or an irreversible permalock.
+- Active timelocks expire automatically and survive bot restarts.
+- Permalocks and active timelocks can only be cleared early through `/safeword`.
 - Newly applied restraints inherit an active lock.
 - Active mitts prevent applying, changing or removing any other restraint until the mitts are removed.
 - Per-server consent preferences.
@@ -36,17 +37,22 @@ Consent is scoped to each Discord server. Administrators can use `/consentreset`
 
 ### Restraints
 
-| Command | Purpose |
-| --- | --- |
-| `/armcuffs` | Change arm restraints. |
-| `/legcuffs` | Change leg restraints. |
-| `/gag` | Change the active gag. |
-| `/hood` | Change the active hood. |
-| `/straitjacket` | Change the straitjacket. |
-| `/suits` | Change the restraint suit. |
-| `/mitts` | Apply mittens, puppy paws or horse hooves. |
-| `/chastity` | Apply a cage, belt or null bulge. |
-| `/blindfold` | Apply a leather blindfold, bandage or protection goggles. |
+| Command | Parameters | Purpose |
+| --- | --- | --- |
+| `/armcuffs` | `target`, `type` | Change arm restraints, including armbinders, cuffs, belts and restrictive arm positions. |
+| `/legcuffs` | `target`, `type` | Change leg restraints, including cuffs, hobbles, spreader bars and hogties. |
+| `/gag` | `target`, `type` | Apply or remove ball gags, bit gags, muzzles and other gag types. |
+| `/hood` | `target`, `type` | Apply or remove deprivation, bondage, animal-themed and other hoods. |
+| `/straitjacket` | `target`, `type` | Change straitjacket straps and sleeve configurations. |
+| `/suits` | `target`, `type` | Apply or remove latex, plush, animal, drone, sack and other restraint suits. |
+| `/mitts` | `target`, `type` | Apply mittens, puppy paws, horse or cow hooves, and ducky mitts. |
+| `/chastity` | `target`, `type` | Apply a cage, belt, null-bulge or udder-style restraint. |
+| `/blindfold` | `target`, `type` | Apply leather, bandage, goggles, paneled or opaque-contact blindfolds. |
+| `/collar` | `target`, `type` | Apply or remove leather, latex, rubber, chain and iron collars. |
+| `/confine` | `target`, `type` | Confine a user in a cell, padded room, sack, circle or pit. |
+| `/encase` | `target`, `type` | Encase a user as a mummy or in a gibbet, rubber, glass, cage, vacbed, cement and other forms. |
+| `/nametag` | `target`, `label` | Set a label shown only in `/rdstatus`; omit `label` to remove it. This never changes the Discord nickname. |
+| `/leash` | `target`, `action` | Attach a leash held by the command user or remove the active leash. |
 
 ### Management and safety
 
@@ -55,6 +61,7 @@ Consent is scoped to each Discord server. Administrators can use `/consentreset`
 | `/about` | Show information about ProtoSeal, its author and source code. |
 | `/donate` | Show the configured page for supporting ProtoSeal development. |
 | `/lock` | Apply or remove a lock across all active restraints. |
+| `/timelock` | Lock all of a user's active restraints for 1 minute to 30 days. |
 | `/rdstatus` | Display a user's consent, active restraints and lock status. |
 | `/consent` | Configure the user's consent mode. |
 | `/safeword` | Clear the user's restraint state for the current server. |
