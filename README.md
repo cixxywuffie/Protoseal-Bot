@@ -2,7 +2,7 @@
 
 ProtoSeal is a consent-focused Discord bot for restraint-themed roleplay. It is built with Java, Spring Boot and Discord4J, and uses slash commands to manage restraints, locks, consent preferences and safety actions.
 
-Created by [CixtroWolf](https://bsky.app/profile/cixtrowolf.com).
+Created by [CixtroWolf](https://bsky.app/profile/bsky.cixtrowolf.com).
 
 > [!IMPORTANT]
 > ProtoSeal is intended for consenting adults and fictional roleplay. Server rules, moderation and clear communication between participants remain essential. `/safeword` is always available to clear a user's restraint state.
