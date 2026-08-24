@@ -48,14 +48,20 @@ public class ConsentOwnerButtonListener {
                 .flatMap(response -> switch (response.result()) {
                     case ACCEPTED -> event.edit("✅ You accepted the owner invitation. Owner mode is now active.")
                             .withComponents()
+                            .withEmbeds()
                             .then(notifyRequester(response.requesterUserId(),
                                     "✅ Your owner invitation was accepted. Owner consent mode is now active."));
                     case REJECTED -> event.edit("❌ You rejected the owner invitation. Consent was not changed.")
                             .withComponents()
+                            .withEmbeds()
                             .then(notifyRequester(response.requesterUserId(),
                                     "❌ Your owner invitation was rejected. Your consent was not changed."));
-                    case EXPIRED -> event.edit("⌛ This owner invitation has expired.").withComponents();
-                    case NOT_FOUND -> event.edit("This owner invitation is no longer active.").withComponents();
+                    case EXPIRED -> event.edit("⌛ This owner invitation has expired.")
+                            .withComponents()
+                            .withEmbeds();
+                    case NOT_FOUND -> event.edit("This owner invitation is no longer active.")
+                            .withComponents()
+                            .withEmbeds();
                     case NOT_INVITED_USER -> event.reply("This owner invitation was not sent to you.")
                             .withEphemeral(true);
                 })
