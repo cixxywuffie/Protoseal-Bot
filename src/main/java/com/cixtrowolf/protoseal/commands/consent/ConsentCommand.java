@@ -96,7 +96,7 @@ public class ConsentCommand implements SlashCommandInterface {
                         .defaultIfEmpty("Unknown server")
                         .flatMap(serverName -> owner.getPrivateChannel()
                             .flatMap(channel -> channel.createMessage()
-                                .withEmbeds(ownerInvitationEmbed(requester, serverName, guildId))
+                                .withEmbeds(ownerInvitationEmbed(requester, serverName))
                                 .withComponents(ActionRow.of(
                                         Button.success("consent-owner:accept:" + token, "Accept"),
                                         Button.danger("consent-owner:reject:" + token, "Reject")))))
@@ -125,7 +125,7 @@ public class ConsentCommand implements SlashCommandInterface {
                 });
     }
 
-    private EmbedCreateSpec ownerInvitationEmbed(User requester, String serverName, String guildId) {
+    private EmbedCreateSpec ownerInvitationEmbed(User requester, String serverName) {
         return EmbedCreateSpec.builder()
                 .color(Color.of(INVITATION_COLOR))
                 .title("Owner consent invitation")
@@ -135,7 +135,7 @@ public class ConsentCommand implements SlashCommandInterface {
                         + "`/safeword` at any time.\n\nOnly accept if you recognize the user and server and agree "
                         + "to participate.")
                 .addField("Requested by", requester.getMention(), true)
-                .addField("Server", "**" + serverName + "**\n`" + guildId + "`", true)
+                .addField("Server", "**" + serverName + "**", true)
                 .footer("This invitation expires in 24 hours.", null)
                 .build();
     }
