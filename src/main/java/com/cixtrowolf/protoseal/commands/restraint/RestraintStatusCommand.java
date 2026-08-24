@@ -9,6 +9,7 @@ import com.cixtrowolf.protoseal.commands.SlashCommandInterface;
 import com.cixtrowolf.protoseal.persistence.consent.ConsentService;
 import com.cixtrowolf.protoseal.persistence.restraint.RestraintState;
 import com.cixtrowolf.protoseal.persistence.restraint.RestraintStateService;
+import com.cixtrowolf.protoseal.model.restraint.RestraintZone;
 import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,10 +88,18 @@ public class RestraintStatusCommand implements SlashCommandInterface {
 
         states.forEach(state -> embed.addField(
                 state.getZone().getEmoji() + " " + state.getZone().getDisplayName(),
-                "Type `" + state.getName() + "`",
+                formatRestraint(state),
                 true));
 
         return embed.build();
+    }
+
+    private String formatRestraint(RestraintState state) {
+        if (state.getZone() == RestraintZone.LEASH
+                && state.getName().startsWith("held by <@")) {
+            return "Type " + state.getName();
+        }
+        return "Type `" + state.getName() + "`";
     }
 
     private String formatLock(RestraintState state) {
