@@ -28,16 +28,31 @@ public class LeashCommand implements SlashCommandInterface {
 
     private Mono<Void> update(ChatInputInteractionEvent event, User target, String guildId, boolean remove) {
         var actor = event.getInteraction().getUser();
+        boolean selfTarget = actor.getId().equals(target.getId());
         return Mono.fromCallable(() -> service.saveState(guildId, target.getId().asString(), RestraintZone.LEASH,
                         remove ? 0 : 1, actor.getId().asString(), remove ? "none" : "held by <@" + actor.getId().asString() + ">"))
                 .subscribeOn(Schedulers.boundedElastic())
                 .flatMap(result -> switch (result) {
-                    case UPDATED -> event.reply(remove
-                            ? actor.getMention() + " removes " + target.getMention() + "'s leash."
-                            : actor.getMention() + " clips a leash to " + target.getMention() + " and takes hold of it.");
+                    case UPDATED -> event.reply(selfTarget
+                            ? selfLeashMessage(actor, remove)
+                            : otherLeashMessage(actor, target, remove));
                     case LOCKED -> event.reply("This leash is locked.").withEphemeral(true);
                     case MITTS_ACTIVE -> event.reply("That user's active mitts prevent this change.").withEphemeral(true);
                     case CONSENT_DENIED -> event.reply("That user's consent settings do not allow this change.").withEphemeral(true);
                 });
+    }
+
+    private String selfLeashMessage(User actor, boolean remove) {
+        return remove
+                ? "🦮 " + actor.getMention() + " unclips their own leash and slips free."
+                : "🦮 " + actor.getMention()
+                        + " clips on their own leash and takes the handle, keeping themselves on a short lead.";
+    }
+
+    private String otherLeashMessage(User actor, User target, boolean remove) {
+        return remove
+                ? "🦮 " + actor.getMention() + " unclips " + target.getMention() + "'s leash and lets them loose."
+                : "🦮 " + actor.getMention() + " clips a leash onto " + target.getMention()
+                        + " and takes firm hold of the handle.";
     }
 }
