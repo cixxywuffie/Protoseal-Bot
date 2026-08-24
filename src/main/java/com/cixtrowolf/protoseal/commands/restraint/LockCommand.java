@@ -70,10 +70,12 @@ public class LockCommand implements SlashCommandInterface {
                 PermalockConfirmation.Action.CONFIRM, guildId, target.getId().asString(), actorId);
         var cancel = new PermalockConfirmation(
                 PermalockConfirmation.Action.CANCEL, guildId, target.getId().asString(), actorId);
+        boolean selfTarget = actorId.equals(target.getId().asString());
+        String restraintOwner = selfTarget ? "your own active restraints" : target.getMention() + "'s active restraints";
         var warning = EmbedCreateSpec.builder()
                 .color(Color.of(WARNING_COLOR))
                 .title("⚠️ Confirm permanent lock")
-                .description("You are about to permanently lock every active restraint of " + target.getMention()
+                .description("You are about to permanently lock all of " + restraintOwner
                         + ".\n\nOnce confirmed, **nobody can remove or replace this lock with `/lock`**. "
                         + "Only `/safeword` can clear the permalock and restraint states.")
                 .addField("Action required", "Confirm only if everyone involved understands this consequence.", false)

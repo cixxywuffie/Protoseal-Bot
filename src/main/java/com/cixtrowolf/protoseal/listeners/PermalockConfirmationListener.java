@@ -61,9 +61,16 @@ public class PermalockConfirmationListener {
     private Mono<Void> editForResult(ButtonInteractionEvent event, PermalockConfirmation request,
                                      RestraintStateService.LockResult result) {
         if (result == RestraintStateService.LockResult.APPLIED) {
-            String publicMessage = "🔐 <@" + request.actorUserId() + "> confirmed a **Permalock** for <@"
-                    + request.targetUserId() + ">. All active restraints are now permanently locked. "
-                    + "Only `/safeword` can clear them.";
+            boolean selfTarget = request.actorUserId().equals(request.targetUserId());
+            String publicMessage = selfTarget
+                    ? "🔐 <@" + request.actorUserId()
+                            + "> surrendered to their own **Permalock**, sealing every active restraint beyond any "
+                            + "ordinary release. No key and no change of mind will unlock them—only special tools "
+                            + "can break the lock and set them free (`/safeword`)."
+                    : "🔐 <@" + request.actorUserId() + "> claimed <@" + request.targetUserId()
+                            + "> in a **Permalock**, sealing every active restraint beyond any ordinary release. "
+                            + "No key and no command will unlock them—only special tools can break the lock and "
+                            + "set them free (`/safeword`).";
             return event.edit("Permalock confirmed. The result has been posted in the channel.")
                     .withComponents()
                     .then(event.createFollowup(publicMessage).then());
