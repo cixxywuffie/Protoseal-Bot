@@ -5,6 +5,8 @@ import discord4j.core.object.command.ApplicationCommandInteractionOption;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.entity.User;
+import discord4j.core.spec.EmbedCreateSpec;
+import discord4j.rest.util.Color;
 import com.cixtrowolf.protoseal.commands.SlashCommandInterface;
 import com.cixtrowolf.protoseal.persistence.consent.ConsentMode;
 import com.cixtrowolf.protoseal.persistence.consent.ConsentService;
@@ -20,6 +22,7 @@ import java.util.Locale;
 public class ConsentCommand implements SlashCommandInterface {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConsentCommand.class);
+    private static final int INVITATION_COLOR = 0x5865F2;
     private final ConsentService consentService;
 
     public ConsentCommand(ConsentService consentService) {
@@ -87,16 +90,16 @@ public class ConsentCommand implements SlashCommandInterface {
                         guildId, requester.getId().asString(), owner.getId().asString()))
                 .subscribeOn(Schedulers.boundedElastic())
                 .flatMap(token -> {
-                    Mono<Void> sendDm = owner.getPrivateChannel()
-                        .flatMap(channel -> channel.createMessage(
-                                        "**Owner consent invitation**\n\n"
-                                                + requester.getUsername() + " wants to select you as their owner "
-                                                + "for restraint roleplay in server `" + guildId + "`.\n\n"
-                                                + "Accepting allows you to manage their restraints and locks. "
-                                                + "This invitation expires in 24 hours.")
+                    Mono<Void> sendDm = event.getInteraction().getGuild()
+                        .map(guild -> guild.getName())
+                        .onErrorReturn("Unknown server")
+                        .defaultIfEmpty("Unknown server")
+                        .flatMap(serverName -> owner.getPrivateChannel()
+                            .flatMap(channel -> channel.createMessage()
+                                .withEmbeds(ownerInvitationEmbed(requester, serverName, guildId))
                                 .withComponents(ActionRow.of(
                                         Button.success("consent-owner:accept:" + token, "Accept"),
-                                        Button.danger("consent-owner:reject:" + token, "Reject"))))
+                                        Button.danger("consent-owner:reject:" + token, "Reject")))))
                         .then();
 
                     return sendDm
@@ -120,6 +123,21 @@ public class ConsentCommand implements SlashCommandInterface {
                                     + ". Your current consent mode will remain unchanged until they accept.");
                         });
                 });
+    }
+
+    private EmbedCreateSpec ownerInvitationEmbed(User requester, String serverName, String guildId) {
+        return EmbedCreateSpec.builder()
+                .color(Color.of(INVITATION_COLOR))
+                .title("Owner consent invitation")
+                .description("**" + requester.getUsername() + "** is inviting you to become their owner for "
+                        + "restraint roleplay.\n\nAccepting will allow you to manage their restraints and locks "
+                        + "under their current consent settings. They can revoke this relationship or use "
+                        + "`/safeword` at any time.\n\nOnly accept if you recognize the user and server and agree "
+                        + "to participate.")
+                .addField("Requested by", requester.getMention(), true)
+                .addField("Server", "**" + serverName + "**\n`" + guildId + "`", true)
+                .footer("This invitation expires in 24 hours.", null)
+                .build();
     }
 
     private Mono<Void> editReply(ChatInputInteractionEvent event, String message) {
