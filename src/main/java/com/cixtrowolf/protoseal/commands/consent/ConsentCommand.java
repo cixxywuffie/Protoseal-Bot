@@ -46,23 +46,27 @@ public class ConsentCommand implements SlashCommandInterface {
         }
 
         User actor = event.getInteraction().getUser();
-        if (mode.get() != ConsentMode.OWNER) {
-            return saveConsent(event, guildId.get().asString(), actor.getId().asString(), mode.get(), null);
-        }
+        return event.deferReply()
+                .withEphemeral(true)
+                .then(Mono.defer(() -> {
+                    if (mode.get() != ConsentMode.OWNER) {
+                        return saveConsent(event, guildId.get().asString(), actor.getId().asString(), mode.get(), null);
+                    }
 
-        return event.getOption("owner")
-                .flatMap(ApplicationCommandInteractionOption::getValue)
-                .map(value -> value.asUser())
-                .map(owner -> owner.flatMap(user -> {
-                    if (user.getId().equals(actor.getId())) {
-                        return event.reply("You cannot select yourself as your owner.").withEphemeral(true);
-                    }
-                    if (user.isBot()) {
-                        return event.reply("A bot cannot be selected as an owner.").withEphemeral(true);
-                    }
-                    return sendOwnerInvitation(event, user, guildId.get().asString(), actor);
-                }))
-                .orElseGet(() -> event.reply("Owner mode requires an owner user.").withEphemeral(true));
+                    return event.getOption("owner")
+                            .flatMap(ApplicationCommandInteractionOption::getValue)
+                            .map(value -> value.asUser())
+                            .map(owner -> owner.flatMap(user -> {
+                                if (user.getId().equals(actor.getId())) {
+                                    return editReply(event, "You cannot select yourself as your owner.");
+                                }
+                                if (user.isBot()) {
+                                    return editReply(event, "A bot cannot be selected as an owner.");
+                                }
+                                return sendOwnerInvitation(event, user, guildId.get().asString(), actor);
+                            }))
+                            .orElseGet(() -> editReply(event, "Owner mode requires an owner user."));
+                }));
     }
 
     private Mono<Void> saveConsent(ChatInputInteractionEvent event, String guildId, String userId,
@@ -74,7 +78,7 @@ public class ConsentCommand implements SlashCommandInterface {
                         guildId, userId, mode, ownerUserId))
                 .doOnError(error -> LOGGER.error(
                         "Consent update failed guildId={} userId={} mode={}", guildId, userId, mode, error))
-                .then(event.reply(consentMessage(mode, ownerUserId)).withEphemeral(true));
+                .then(editReply(event, consentMessage(mode, ownerUserId)));
     }
 
     private Mono<Void> sendOwnerInvitation(ChatInputInteractionEvent event, User owner,
@@ -82,7 +86,8 @@ public class ConsentCommand implements SlashCommandInterface {
         return Mono.fromCallable(() -> consentService.createOwnerRequest(
                         guildId, requester.getId().asString(), owner.getId().asString()))
                 .subscribeOn(Schedulers.boundedElastic())
-                .flatMap(token -> owner.getPrivateChannel()
+                .flatMap(token -> {
+                    Mono<Void> sendDm = owner.getPrivateChannel()
                         .flatMap(channel -> channel.createMessage(
                                         "**Owner consent invitation**\n\n"
                                                 + requester.getUsername() + " wants to select you as their owner "
@@ -92,20 +97,33 @@ public class ConsentCommand implements SlashCommandInterface {
                                 .withComponents(ActionRow.of(
                                         Button.success("consent-owner:accept:" + token, "Accept"),
                                         Button.danger("consent-owner:reject:" + token, "Reject"))))
-                        .then(event.reply("Owner invitation sent to " + owner.getMention()
-                                + ". Your current consent mode will remain unchanged until they accept.")
-                                .withEphemeral(true))
-                        .doOnSuccess(ignored -> LOGGER.info(
-                                "Owner invitation sent guildId={} requesterId={} ownerId={}",
-                                guildId, requester.getId(), owner.getId()))
+                        .then();
+
+                    return sendDm
+                        .thenReturn(true)
                         .onErrorResume(error -> Mono.fromRunnable(() -> consentService.cancelOwnerRequest(
                                         guildId, requester.getId().asString()))
                                 .subscribeOn(Schedulers.boundedElastic())
                                 .doOnSuccess(ignored -> LOGGER.warn(
                                         "Owner invitation cancelled after DM failure guildId={} requesterId={} ownerId={}",
-                                        guildId, requester.getId(), owner.getId()))
-                                .then(event.reply("I could not send that user a DM. Your consent was not changed.")
-                                        .withEphemeral(true))));
+                                        guildId, requester.getId(), owner.getId(), error))
+                                .then(editReply(event,
+                                        "I could not send that user a DM. Your consent was not changed."))
+                                .thenReturn(false))
+                        .flatMap(sent -> {
+                            if (!sent) {
+                                return Mono.empty();
+                            }
+                            LOGGER.info("Owner invitation sent guildId={} requesterId={} ownerId={}",
+                                    guildId, requester.getId(), owner.getId());
+                            return editReply(event, "Owner invitation sent to " + owner.getMention()
+                                    + ". Your current consent mode will remain unchanged until they accept.");
+                        });
+                });
+    }
+
+    private Mono<Void> editReply(ChatInputInteractionEvent event, String message) {
+        return event.editReply(message).then();
     }
 
     private String consentMessage(ConsentMode mode, String ownerUserId) {
