@@ -40,29 +40,26 @@ public class ChannelConfigCommand implements SlashCommandInterface {
 
     private Mono<Void> execute(ChatInputInteractionEvent event, String guildId) {
         var option = event.getOptions().stream().findFirst();
-        if (option.isEmpty()) return event.reply("Choose `allow`, `unallow`, `block`, `unblock`, `list`, or `clear`.")
+        if (option.isEmpty()) return event.reply("Choose `block`, `unblock`, `list`, or `clear`.")
                 .withEphemeral(true);
         String action = option.get().getName();
 
         if ("list".equals(action)) {
-            return blocking(() -> new ChannelLists(channelService.list(guildId), channelService.listBlocked(guildId)))
-                    .flatMap(channels -> {
-                String allowlist = channels.allowed().isEmpty() ? "None"
-                        : channels.allowed().stream().map(id -> "<#" + id + ">").reduce((a, b) -> a + "\n" + b).orElse("");
-                String blacklist = channels.blocked().isEmpty() ? "None"
-                        : channels.blocked().stream().map(id -> "<#" + id + ">").reduce((a, b) -> a + "\n" + b).orElse("");
-                String message = "NSFW channels are allowed by default unless blacklisted.\n"
-                        + "**Whitelist (additional channels)**\n" + allowlist
-                        + "\n**Blacklist (always blocked)**\n" + blacklist;
+            return blocking(() -> channelService.listBlocked(guildId))
+                    .flatMap(blockedChannels -> {
+                String blacklist = blockedChannels.isEmpty() ? "None"
+                        : blockedChannels.stream().map(id -> "<#" + id + ">").reduce((a, b) -> a + "\n" + b).orElse("");
+                String message = "ProtoSeal is available only in NSFW text channels unless they are blacklisted.\n"
+                        + "**Blacklist**\n" + blacklist;
                 return event.reply(message).withEphemeral(true);
             });
         }
         if ("clear".equals(action)) {
             return Mono.fromRunnable(() -> channelService.clear(guildId)).subscribeOn(Schedulers.boundedElastic())
-                    .then(event.reply("Whitelist and blacklist cleared. The bot is available in NSFW channels by default.")
+                    .then(event.reply("Blacklist cleared. The bot is available in NSFW text channels.")
                             .withEphemeral(true));
         }
-        if (!java.util.Set.of("allow", "unallow", "block", "unblock").contains(action)) {
+        if (!java.util.Set.of("block", "unblock").contains(action)) {
             return event.reply("Unknown channel configuration action.").withEphemeral(true);
         }
 
@@ -77,8 +74,6 @@ public class ChannelConfigCommand implements SlashCommandInterface {
 
     private boolean change(String action, String guildId, String channelId) {
         return switch (action) {
-            case "allow" -> channelService.add(guildId, channelId);
-            case "unallow" -> channelService.remove(guildId, channelId);
             case "block" -> channelService.block(guildId, channelId);
             case "unblock" -> channelService.unblock(guildId, channelId);
             default -> throw new IllegalArgumentException("Unsupported channel action: " + action);
@@ -88,8 +83,6 @@ public class ChannelConfigCommand implements SlashCommandInterface {
     private String response(String action, String channelId, boolean changed) {
         String mention = "<#" + channelId + ">";
         return switch (action) {
-            case "allow" -> changed ? mention + " added to the whitelist." : mention + " was already whitelisted.";
-            case "unallow" -> changed ? mention + " removed from the whitelist." : mention + " was not whitelisted.";
             case "block" -> changed ? mention + " added to the blacklist." : mention + " was already blacklisted.";
             case "unblock" -> changed ? mention + " removed from the blacklist." : mention + " was not blacklisted.";
             default -> "Unknown channel configuration action.";
@@ -99,6 +92,4 @@ public class ChannelConfigCommand implements SlashCommandInterface {
     private <T> Mono<T> blocking(Callable<T> operation) {
         return Mono.fromCallable(operation).subscribeOn(Schedulers.boundedElastic());
     }
-
-    private record ChannelLists(java.util.List<String> allowed, java.util.List<String> blocked) { }
 }

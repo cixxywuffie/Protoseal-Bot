@@ -39,8 +39,8 @@ public class AdminHelpCommand implements SlashCommandInterface {
                                         + "and removes their owner relationship.\n"
                                         + "`/safeword target` — removes another user's active restraints and locks "
                                         + "in an emergency.\n"
-                                        + "`/channelconfig allow|unallow|block|unblock|list|clear` — controls where "
-                                        + "the bot can be used.\n\n"
+                                        + "`/channelconfig block|unblock|list|clear` — blocks selected NSFW channels "
+                                        + "where the bot should be unavailable.\n\n"
                                         + "Administrator access never bypasses a user's normal consent settings.")
                                 .withEphemeral(true)
                         : event.reply("Only server administrators can use this command.").withEphemeral(true));

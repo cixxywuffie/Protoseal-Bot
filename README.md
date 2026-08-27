@@ -18,7 +18,7 @@ Created by [CixtroWolf](https://bsky.app/profile/bsky.cixtrowolf.com).
 - Per-server consent preferences.
 - Owner invitations that must be accepted by the invited user through DM.
 - Administrator-only consent reset tools.
-- Per-server allowlist for the channels where the bot can be used.
+- Per-server blacklist for disabling the bot in selected NSFW channels.
 - Persistent state using H2 locally and MariaDB in containerized environments.
 - Discord embeds for restraint status.
 
@@ -70,12 +70,12 @@ Consent is scoped to each Discord server. Administrators can use `/consentreset`
 | `/consentreset` | Reset a user's consent to `self_only` (administrator only). |
 | `/channelconfig` | Configure allowed bot channels (administrator only). |
 
-ProtoSeal automatically allows every Discord channel marked as age-restricted (NSFW).
-Administrators can use `/channelconfig allow` and `unallow` to maintain a whitelist of additional
-channels, and `block` or `unblock` to maintain a blacklist. The blacklist takes priority, including
-over NSFW channels. `/channelconfig list` shows both lists and `clear` resets them to the default
-NSFW-only behaviour. The NSFW status is checked dynamically, so changing it in Discord immediately
-updates the filter. `/channelconfig` and the safety command `/safeword` remain available outside it.
+ProtoSeal allows commands only in Discord text channels marked as age-restricted (NSFW).
+Administrators can use `/channelconfig block` and `unblock` to maintain a blacklist of NSFW channels
+where the bot must remain unavailable. `/channelconfig list` shows that blacklist and `clear` removes
+it. The NSFW status is checked dynamically, so changing it in Discord immediately updates the filter.
+`/channelconfig` and the safety command `/safeword` remain available outside NSFW channels so that
+configuration and safety actions cannot become unreachable.
 
 ### Donations
 
