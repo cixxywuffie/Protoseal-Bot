@@ -60,10 +60,7 @@ public class SlashCommandListener {
                     if (isBlocked) return Mono.just(false);
                     return event.getInteraction().getChannel()
                             .map(channel -> channel instanceof TextChannel textChannel && textChannel.isNsfw())
-                            .onErrorReturn(false)
-                            .flatMap(isNsfw -> isNsfw ? Mono.just(true)
-                                    : Mono.fromCallable(() -> channelService.isAllowed(guildId, channelId))
-                                            .subscribeOn(Schedulers.boundedElastic()));
+                            .onErrorReturn(false);
                 });
     }
 

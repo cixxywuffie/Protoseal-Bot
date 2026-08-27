@@ -15,33 +15,8 @@ public class GuildChannelService {
         this.blockedRepository = blockedRepository;
     }
 
-    public boolean isAllowed(String guildId, String channelId) {
-        return repository.existsByGuildIdAndChannelId(guildId, channelId);
-    }
-
     public boolean isBlocked(String guildId, String channelId) {
         return blockedRepository.existsByGuildIdAndChannelId(guildId, channelId);
-    }
-
-    @Transactional
-    public boolean add(String guildId, String channelId) {
-        boolean wasBlocked = blockedRepository.existsByGuildIdAndChannelId(guildId, channelId);
-        if (wasBlocked) blockedRepository.deleteByGuildIdAndChannelId(guildId, channelId);
-        if (repository.existsByGuildIdAndChannelId(guildId, channelId)) return wasBlocked;
-        repository.save(new GuildChannel(guildId, channelId));
-        return true;
-    }
-
-    @Transactional
-    public boolean remove(String guildId, String channelId) {
-        if (!repository.existsByGuildIdAndChannelId(guildId, channelId)) return false;
-        repository.deleteByGuildIdAndChannelId(guildId, channelId);
-        return true;
-    }
-
-    public List<String> list(String guildId) {
-        return repository.findAllByGuildIdOrderByChannelId(guildId).stream()
-                .map(GuildChannel::getChannelId).toList();
     }
 
     @Transactional
