@@ -213,6 +213,41 @@ On Linux or macOS:
 
 The suite covers consent authorization, owner invitations, lock propagation, restraint persistence, database conversions and Discord command manifests.
 
+## CI/CD with GitHub Actions
+
+The public CI workflow in `.github/workflows/tests.yml` runs the Maven test suite for pull requests and
+pushes to `main`. It has read-only repository permissions and receives no deployment secrets, making it
+safe for contributions to a public repository.
+
+After the tests for a push to `main` complete successfully, `.github/workflows/deploy.yml` connects to
+the development server over SSH, fast-forwards its checkout and rebuilds the Compose services. It can
+also be started manually from the Actions tab. The server's `.env` file and the `mariadb-data` volume
+are not replaced.
+
+Before enabling deployment:
+
+1. On the server, clone the repository, create its development `.env`, and verify that
+   `docker compose up --build -d` works for the deployment user.
+2. Give that user read access to the GitHub repository and permission to run Docker without an
+   interactive password prompt.
+3. Create a GitHub environment named `development` under **Settings > Environments**. Optional approval
+   rules can be added there.
+4. Add these environment secrets:
+
+| Secret | Value |
+| --- | --- |
+| `DEPLOY_HOST` | Server hostname or IP address. |
+| `DEPLOY_PORT` | SSH port; use `22` for the default. |
+| `DEPLOY_USER` | Restricted server user that owns the checkout. |
+| `DEPLOY_PATH` | Absolute path to the repository on the server. |
+| `SSH_PRIVATE_KEY` | Private key dedicated to GitHub Actions. Add its public key to the server user's `~/.ssh/authorized_keys`. |
+| `SSH_KNOWN_HOSTS` | Verified server host-key line, obtained from a trusted machine with `ssh-keyscan -H -p PORT HOST`. |
+
+Keep the server checkout on `main` with no local code changes. The deployment intentionally uses
+`git pull --ff-only`, so it stops instead of overwriting unexpected server-side modifications. A failed
+test prevents deployment, and concurrent deployments are serialized. If the server-side Docker build
+fails, Compose leaves the currently running containers in place and reports the failed deployment.
+
 ## Logging
 
 ProtoSeal writes structured command lifecycle and domain events to standard output. The default application log level is `INFO`; set `APP_LOG_LEVEL=DEBUG` to include command reception and status-query diagnostics. Logs include Discord identifiers and outcomes for correlation, but never owner-invitation tokens or message contents.
