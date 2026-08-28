@@ -31,7 +31,24 @@ jobs:
           printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
           printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/deploy_key ~/.ssh/known_hosts
+      - name: Validate deployment configuration
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          test -n "$SSH_PRIVATE_KEY" || { echo "::error::SSH_PRIVATE_KEY is empty"; exit 1; }
+          test -n "$SSH_KNOWN_HOSTS" || { echo "::error::SSH_KNOWN_HOSTS is empty"; exit 1; }
+          test -n "$DEPLOY_HOST" || { echo "::error::DEPLOY_HOST is empty"; exit 1; }
+          test -n "$DEPLOY_USER" || { echo "::error::DEPLOY_USER is empty"; exit 1; }
+          test -n "$DEPLOY_PATH" || { echo "::error::DEPLOY_PATH is empty"; exit 1; }
 
+          ssh-keygen -y -f ~/.ssh/deploy_key >/dev/null ||
+          { echo "::error::SSH_PRIVATE_KEY is not a valid OpenSSH private key"; exit 1; }
+
+          echo "Deployment configuration is present"
       - name: Pull and restart services
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
