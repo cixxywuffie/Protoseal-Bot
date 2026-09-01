@@ -1,6 +1,7 @@
 package com.cixtrowolf.protoseal;
 
 import com.cixtrowolf.protoseal.listeners.ConsentOwnerButtonListener;
+import com.cixtrowolf.protoseal.listeners.ConsentRestraintButtonListener;
 import com.cixtrowolf.protoseal.listeners.GlobalCommandRegistrar;
 import com.cixtrowolf.protoseal.listeners.PermalockConfirmationListener;
 import com.cixtrowolf.protoseal.listeners.SlashCommandListener;
@@ -28,6 +29,9 @@ class ProtoSealApplicationTests {
 
 	@MockitoBean
 	private ConsentOwnerButtonListener consentOwnerButtonListener;
+
+	@MockitoBean
+	private ConsentRestraintButtonListener consentRestraintButtonListener;
 
 	@MockitoBean
 	private PermalockConfirmationListener permalockConfirmationListener;
