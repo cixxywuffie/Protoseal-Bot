@@ -84,11 +84,11 @@ public class ConsentService {
     }
 
     @Transactional
-    public String createRestraintRequest(String guildId, String targetUserId, String actorUserId,
+    public String createRestraintRequest(String guildId, String targetUserId, String actorUserId, String channelId,
                                          com.cixtrowolf.protoseal.model.restraint.RestraintZone zone,
                                          int level, String name) {
         String token = UUID.randomUUID().toString();
-        restraintRequestRepository.save(new ConsentRestraintRequest(token, guildId, targetUserId, actorUserId,
+        restraintRequestRepository.save(new ConsentRestraintRequest(token, guildId, targetUserId, actorUserId, channelId,
                 zone, level, name, Instant.now().plus(Duration.ofMinutes(5))));
         return token;
     }

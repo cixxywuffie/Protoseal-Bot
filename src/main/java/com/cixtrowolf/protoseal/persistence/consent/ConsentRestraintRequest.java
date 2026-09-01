@@ -28,6 +28,8 @@ public class ConsentRestraintRequest {
     private String targetUserId;
     @Column(name = "actor_user_id", nullable = false, length = 32)
     private String actorUserId;
+    @Column(name = "channel_id", length = 32)
+    private String channelId;
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 32)
     private RestraintZone zone;
@@ -41,11 +43,13 @@ public class ConsentRestraintRequest {
     protected ConsentRestraintRequest() {}
 
     public ConsentRestraintRequest(String token, String guildId, String targetUserId, String actorUserId,
+                                   String channelId,
                                    RestraintZone zone, int level, String name, Instant expiresAt) {
         this.token = token;
         this.guildId = guildId;
         this.targetUserId = targetUserId;
         this.actorUserId = actorUserId;
+        this.channelId = channelId;
         this.zone = zone;
         this.level = level;
         this.name = name;
@@ -56,6 +60,7 @@ public class ConsentRestraintRequest {
     public String getGuildId() { return guildId; }
     public String getTargetUserId() { return targetUserId; }
     public String getActorUserId() { return actorUserId; }
+    public String getChannelId() { return channelId; }
     public RestraintZone getZone() { return zone; }
     public int getLevel() { return level; }
     public String getName() { return name; }

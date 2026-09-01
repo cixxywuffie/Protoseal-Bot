@@ -88,7 +88,7 @@ class ConsentServiceTest {
     @Test
     void acceptedAskRequestIsSingleUseAndReturnsTheApprovedAction() {
         var setting = new ConsentSetting("guild", "target", ConsentMode.ASK, null);
-        var request = new ConsentRestraintRequest("token", "guild", "target", "actor",
+        var request = new ConsentRestraintRequest("token", "guild", "target", "actor", "channel",
                 com.cixtrowolf.protoseal.model.restraint.RestraintZone.GAG, 1, "ball gag",
                 Instant.now().plusSeconds(60));
         when(restraintRequestRepository.findByToken("token")).thenReturn(Optional.of(request));
