@@ -5,7 +5,6 @@ import com.cixtrowolf.protoseal.persistence.consent.ConsentService;
 import com.cixtrowolf.protoseal.persistence.restraint.RestraintStateService;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent;
-import discord4j.common.util.Snowflake;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -18,14 +17,12 @@ public class ConsentRestraintButtonListener {
     private static final String PREFIX = "consent-restraint:";
     private final ConsentService consentService;
     private final RestraintStateService restraintStateService;
-    private final GatewayDiscordClient client;
 
     public ConsentRestraintButtonListener(ConsentService consentService,
                                           RestraintStateService restraintStateService,
                                           GatewayDiscordClient client) {
         this.consentService = consentService;
         this.restraintStateService = restraintStateService;
-        this.client = client;
         client.on(ButtonInteractionEvent.class, this::handle).subscribe();
     }
 
@@ -41,8 +38,7 @@ public class ConsentRestraintButtonListener {
                 .subscribeOn(Schedulers.boundedElastic())
                 .flatMap(response -> switch (response.result()) {
                     case ACCEPTED -> applyAccepted(event, response.request());
-                    case REJECTED -> event.edit("Request rejected. No restraints were changed.").withComponents()
-                            .then(notifyRequester(response.request(), "Your restraint request was rejected."));
+                    case REJECTED -> event.edit("Request rejected. No restraints were changed.").withComponents();
                     case EXPIRED -> event.edit("This restraint request has expired.").withComponents();
                     case NOT_FOUND -> event.edit("This restraint request is no longer active.").withComponents();
                     case CONSENT_CHANGED -> event.edit("Consent settings changed, so this request was cancelled.")
@@ -66,21 +62,7 @@ public class ConsentRestraintButtonListener {
                         case MITTS_ACTIVE -> "Request accepted, but active mitts now prevent this change.";
                         case CONSENT_DENIED -> "The approved request could not be applied.";
                     };
-                    return event.edit(message).withComponents()
-                            .then(notifyRequester(request, message));
-                });
-    }
-
-    private Mono<Void> notifyRequester(
-            com.cixtrowolf.protoseal.persistence.consent.ConsentRestraintRequest request, String message) {
-        if (request == null) return Mono.empty();
-        return client.getUserById(Snowflake.of(request.getActorUserId()))
-                .flatMap(user -> user.getPrivateChannel())
-                .flatMap(channel -> channel.createMessage(message))
-                .then()
-                .onErrorResume(error -> {
-                    LOGGER.warn("Unable to notify restraint requester userId={}", request.getActorUserId());
-                    return Mono.empty();
+                    return event.edit(message).withComponents();
                 });
     }
 

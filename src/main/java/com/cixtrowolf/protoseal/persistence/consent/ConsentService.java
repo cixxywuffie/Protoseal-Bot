@@ -94,11 +94,6 @@ public class ConsentService {
     }
 
     @Transactional
-    public void cancelRestraintRequest(String token) {
-        restraintRequestRepository.findByToken(token).ifPresent(restraintRequestRepository::delete);
-    }
-
-    @Transactional
     public RestraintRequestResponse respondToRestraintRequest(String token, String actorUserId, boolean accepted) {
         var request = restraintRequestRepository.findByToken(token).orElse(null);
         if (request == null) return new RestraintRequestResponse(RestraintRequestResult.NOT_FOUND, null);

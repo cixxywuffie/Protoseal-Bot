@@ -80,26 +80,16 @@ public class RestraintCommand implements SlashCommandInterface {
         String response = selfTarget ? selectedLevel.selfMessage() : selectedLevel.message();
 
         if (consentService.requiresRestraintApproval(guildId, target.getId().asString(), actor.getId().asString())) {
-            return event.deferReply().withEphemeral(true).then(
-                    Mono.fromCallable(() -> consentService.createRestraintRequest(
-                                    guildId, target.getId().asString(), actor.getId().asString(), definition.getZone(),
-                                    level, selectedLevel.name()))
-                            .subscribeOn(Schedulers.boundedElastic())
-                            .flatMap(token -> target.getPrivateChannel()
-                                    .flatMap(channel -> channel.createMessage()
-                                            .withContent(actor.getMention() + " asks to set your **"
-                                                    + definition.getCommandName() + "** to **" + selectedLevel.name()
-                                                    + "** in their shared server. This request expires in 5 minutes.")
-                                            .withComponents(ActionRow.of(
-                                                    Button.success("consent-restraint:accept:" + token, "Accept"),
-                                                    Button.danger("consent-restraint:reject:" + token, "Reject"))))
-                                    .then(event.editReply("Approval request sent privately to "
-                                            + target.getMention() + ".").then())
-                                    .onErrorResume(error -> Mono.fromRunnable(
-                                                    () -> consentService.cancelRestraintRequest(token))
-                                            .subscribeOn(Schedulers.boundedElastic())
-                                            .then(event.editReply("I could not send that user a DM. "
-                                                    + "The restraint request was cancelled.").then()))));
+            return Mono.fromCallable(() -> consentService.createRestraintRequest(
+                            guildId, target.getId().asString(), actor.getId().asString(), definition.getZone(),
+                            level, selectedLevel.name()))
+                    .subscribeOn(Schedulers.boundedElastic())
+                    .flatMap(token -> event.reply(actor.getMention() + " asks to set " + target.getMention()
+                                    + "'s **" + definition.getCommandName() + "** to **" + selectedLevel.name()
+                                    + "**. This request expires in 5 minutes.")
+                            .withComponents(ActionRow.of(
+                                    Button.success("consent-restraint:accept:" + token, "Accept"),
+                                    Button.danger("consent-restraint:reject:" + token, "Reject"))));
         }
 
         return Mono.fromCallable(() -> restraintStateService.saveState(
