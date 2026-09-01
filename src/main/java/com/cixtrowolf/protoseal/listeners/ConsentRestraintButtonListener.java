@@ -6,6 +6,7 @@ import com.cixtrowolf.protoseal.persistence.restraint.RestraintStateService;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent;
 import discord4j.common.util.Snowflake;
+import discord4j.core.object.entity.channel.MessageChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -41,8 +42,7 @@ public class ConsentRestraintButtonListener {
                 .subscribeOn(Schedulers.boundedElastic())
                 .flatMap(response -> switch (response.result()) {
                     case ACCEPTED -> applyAccepted(event, response.request());
-                    case REJECTED -> event.edit("Request rejected. No restraints were changed.").withComponents()
-                            .then(notifyRequester(response.request(), "Your restraint request was rejected."));
+                    case REJECTED -> event.edit("Request rejected. No restraints were changed.").withComponents();
                     case EXPIRED -> event.edit("This restraint request has expired.").withComponents();
                     case NOT_FOUND -> event.edit("This restraint request is no longer active.").withComponents();
                     case CONSENT_CHANGED -> event.edit("Consent settings changed, so this request was cancelled.")
@@ -66,30 +66,35 @@ public class ConsentRestraintButtonListener {
                         case MITTS_ACTIVE -> "Request accepted, but active mitts now prevent this change.";
                         case CONSENT_DENIED -> "The approved request could not be applied.";
                     };
-                    return event.edit(message).withComponents()
-                            .then(notifyRequester(request, message));
+                    Mono<Void> editRequest = event.edit(message).withComponents();
+                    if (result != RestraintStateService.StateUpdateResult.UPDATED) return editRequest;
+                    return editRequest.then(postAcceptedAction(request));
                 });
     }
 
-    private Mono<Void> notifyRequester(
-            com.cixtrowolf.protoseal.persistence.consent.ConsentRestraintRequest request, String message) {
-        if (request == null) return Mono.empty();
-        return client.getUserById(Snowflake.of(request.getActorUserId()))
-                .flatMap(user -> user.getPrivateChannel())
-                .flatMap(channel -> channel.createMessage(message))
+    private Mono<Void> postAcceptedAction(
+            com.cixtrowolf.protoseal.persistence.consent.ConsentRestraintRequest request) {
+        if (request.getChannelId() == null) return Mono.empty();
+        return client.getChannelById(Snowflake.of(request.getChannelId()))
+                .ofType(MessageChannel.class)
+                .flatMap(channel -> channel.createMessage(acceptedMessage(request)))
                 .then()
                 .onErrorResume(error -> {
-                    LOGGER.warn("Unable to notify restraint requester userId={}", request.getActorUserId());
+                    LOGGER.warn("Unable to post accepted restraint request channelId={} actorId={} targetId={}",
+                            request.getChannelId(), request.getActorUserId(), request.getTargetUserId(), error);
                     return Mono.empty();
                 });
     }
 
     private String acceptedMessage(com.cixtrowolf.protoseal.persistence.consent.ConsentRestraintRequest request) {
-        String command = java.util.Arrays.stream(RestraintDefinition.values())
-                .filter(definition -> definition.getZone() == request.getZone())
-                .map(RestraintDefinition::getCommandName)
-                .findFirst().orElse(request.getZone().name().toLowerCase());
-        return "Request accepted: <@" + request.getActorUserId() + "> set <@" + request.getTargetUserId()
-                + ">'s **" + command + "** to **" + request.getName() + "**.";
+        var definition = java.util.Arrays.stream(RestraintDefinition.values())
+                .filter(candidate -> candidate.getZone() == request.getZone())
+                .findFirst().orElse(null);
+        if (definition == null) {
+            return "<@" + request.getActorUserId() + "> changed <@" + request.getTargetUserId()
+                    + ">'s restraint to **" + request.getName() + "**.";
+        }
+        return String.format(definition.getLevel(request.getLevel()).message(),
+                "<@" + request.getActorUserId() + ">", "<@" + request.getTargetUserId() + ">");
     }
 }

@@ -82,7 +82,8 @@ public class RestraintCommand implements SlashCommandInterface {
         if (consentService.requiresRestraintApproval(guildId, target.getId().asString(), actor.getId().asString())) {
             return event.deferReply().withEphemeral(true).then(
                     Mono.fromCallable(() -> consentService.createRestraintRequest(
-                                    guildId, target.getId().asString(), actor.getId().asString(), definition.getZone(),
+                                    guildId, target.getId().asString(), actor.getId().asString(),
+                                    event.getInteraction().getChannelId().asString(), definition.getZone(),
                                     level, selectedLevel.name()))
                             .subscribeOn(Schedulers.boundedElastic())
                             .flatMap(token -> target.getPrivateChannel()
