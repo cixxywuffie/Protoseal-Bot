@@ -99,6 +99,26 @@ public class ConsentService {
     }
 
     @Transactional
+    public String createLockRequest(String guildId, String targetUserId, String actorUserId, String channelId,
+                                    com.cixtrowolf.protoseal.model.restraint.RestraintLockType lockType) {
+        String token = UUID.randomUUID().toString();
+        restraintRequestRepository.save(new ConsentRestraintRequest(token, guildId, targetUserId, actorUserId,
+                channelId, ConsentRestraintRequest.RequestType.LOCK, lockType, null,
+                Instant.now().plus(Duration.ofMinutes(5))));
+        return token;
+    }
+
+    @Transactional
+    public String createTimelockRequest(String guildId, String targetUserId, String actorUserId, String channelId,
+                                        long minutes) {
+        String token = UUID.randomUUID().toString();
+        restraintRequestRepository.save(new ConsentRestraintRequest(token, guildId, targetUserId, actorUserId,
+                channelId, ConsentRestraintRequest.RequestType.TIMELOCK, null, minutes,
+                Instant.now().plus(Duration.ofMinutes(5))));
+        return token;
+    }
+
+    @Transactional
     public RestraintRequestResponse respondToRestraintRequest(String token, String actorUserId, boolean accepted) {
         var request = restraintRequestRepository.findByToken(token).orElse(null);
         if (request == null) return new RestraintRequestResponse(RestraintRequestResult.NOT_FOUND, null);

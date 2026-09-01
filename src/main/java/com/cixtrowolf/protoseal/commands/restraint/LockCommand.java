@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import com.cixtrowolf.protoseal.commands.SlashCommandInterface;
 import com.cixtrowolf.protoseal.model.restraint.RestraintLockType;
 import com.cixtrowolf.protoseal.persistence.restraint.RestraintStateService;
+import com.cixtrowolf.protoseal.persistence.consent.ConsentService;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -24,9 +25,11 @@ public class LockCommand implements SlashCommandInterface {
     private static final Logger LOGGER = LoggerFactory.getLogger(LockCommand.class);
     private static final int WARNING_COLOR = 0xE67E22;
     private final RestraintStateService restraintStateService;
+    private final ConsentService consentService;
 
-    public LockCommand(RestraintStateService restraintStateService) {
+    public LockCommand(RestraintStateService restraintStateService, ConsentService consentService) {
         this.restraintStateService = restraintStateService;
+        this.consentService = consentService;
     }
 
     @Override
@@ -54,12 +57,36 @@ public class LockCommand implements SlashCommandInterface {
                 .map(value -> value.asUser())
                 .map(target -> target.flatMap(user -> lockType == RestraintLockType.PERMALOCK
                         ? requestPermalockConfirmation(event, user, guildId.get().asString())
+                        : consentService.requiresRestraintApproval(guildId.get().asString(), user.getId().asString(),
+                                event.getInteraction().getUser().getId().asString())
+                        ? requestLockApproval(event, user, guildId.get().asString(), lockType)
                         : Mono.fromCallable(() -> restraintStateService.updateLocks(
                                 guildId.get().asString(), user.getId().asString(), lockType,
                                 event.getInteraction().getUser().getId().asString()))
                         .subscribeOn(Schedulers.boundedElastic())
                         .flatMap(result -> replyForResult(event, user.getMention(), lockType, result))))
                 .orElseGet(() -> event.reply("You must specify a target user.").withEphemeral(true));
+    }
+
+    private Mono<Void> requestLockApproval(ChatInputInteractionEvent event, User target, String guildId,
+                                           RestraintLockType lockType) {
+        String actorId = event.getInteraction().getUser().getId().asString();
+        String action = lockType == null ? "remove all locks from" : "apply **" + lockType.getDisplayName() + "** to";
+        return event.deferReply().withEphemeral(true).then(Mono.fromCallable(() -> consentService.createLockRequest(
+                        guildId, target.getId().asString(), actorId,
+                        event.getInteraction().getChannelId().asString(), lockType))
+                .subscribeOn(Schedulers.boundedElastic())
+                .flatMap(token -> target.getPrivateChannel()
+                        .flatMap(channel -> channel.createMessage()
+                                .withContent(event.getInteraction().getUser().getMention() + " asks to " + action
+                                        + " all your active restraints. This request expires in 5 minutes.")
+                                .withComponents(ActionRow.of(
+                                        Button.success("consent-restraint:accept:" + token, "Accept"),
+                                        Button.danger("consent-restraint:reject:" + token, "Reject"))))
+                        .then(event.editReply("Lock approval request sent privately to " + target.getMention() + ".").then())
+                        .onErrorResume(error -> Mono.fromRunnable(() -> consentService.cancelRestraintRequest(token))
+                                .subscribeOn(Schedulers.boundedElastic())
+                                .then(event.editReply("I could not send that user a DM. The lock request was cancelled.").then()))));
     }
 
     private Mono<Void> requestPermalockConfirmation(ChatInputInteractionEvent event, User target, String guildId) {

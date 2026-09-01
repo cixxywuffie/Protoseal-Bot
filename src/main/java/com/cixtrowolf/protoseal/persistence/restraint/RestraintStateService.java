@@ -77,6 +77,11 @@ public class RestraintStateService {
         if (!consentService.canManageRestraints(guildId, userId, actorId)) {
             return LockResult.CONSENT_DENIED;
         }
+        return updateLocksApproved(guildId, userId, lockType, actorId);
+    }
+
+    @Transactional
+    public LockResult updateLocksApproved(String guildId, String userId, RestraintLockType lockType, String actorId) {
         var states = repository.findByGuildIdAndUserIdAndLevelGreaterThanOrderByZoneAsc(guildId, userId, 0);
         if (states.isEmpty()) {
             return LockResult.NO_ACTIVE_RESTRAINT;
@@ -107,6 +112,11 @@ public class RestraintStateService {
         if (!consentService.canManageRestraints(guildId, userId, actorId)) {
             return TimelockResult.CONSENT_DENIED;
         }
+        return applyTimelockApproved(guildId, userId, actorId, duration);
+    }
+
+    @Transactional
+    public TimelockResult applyTimelockApproved(String guildId, String userId, String actorId, Duration duration) {
         if (duration.isNegative() || duration.isZero() || duration.compareTo(Duration.ofDays(30)) > 0) {
             return TimelockResult.INVALID_DURATION;
         }
