@@ -61,7 +61,7 @@ public class ConsentRestraintButtonListener {
                 .subscribeOn(Schedulers.boundedElastic())
                 .flatMap(result -> {
                     String message = switch (result) {
-                        case UPDATED -> acceptedMessage(request);
+                        case UPDATED -> "Request accepted. The restraint was applied.";
                         case LOCKED -> "Request accepted, but the restraint is now locked and could not be changed.";
                         case MITTS_ACTIVE -> "Request accepted, but active mitts now prevent this change.";
                         case CONSENT_DENIED -> "The approved request could not be applied.";
