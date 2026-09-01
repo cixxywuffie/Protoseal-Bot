@@ -27,6 +27,7 @@ Created by [CixtroWolf](https://bsky.app/profile/bsky.cixtrowolf.com).
 | Mode | Behaviour |
 | --- | --- |
 | `self_only` | Only the user can manage their own restraints. This is the default. |
+| `ask` | Other members may request a restraint change; the user must accept each request before it is applied. |
 | `exposed` | Other server members can apply restraints and locks to the user. |
 | `owner` | Only an owner explicitly invited and accepted by the user can manage their restraints. |
 | `disabled` | Restraint interactions are disabled. The user can still use `/safeword`. |
