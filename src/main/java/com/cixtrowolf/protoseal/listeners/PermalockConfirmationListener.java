@@ -3,6 +3,10 @@ package com.cixtrowolf.protoseal.listeners;
 import com.cixtrowolf.protoseal.commands.restraint.PermalockConfirmation;
 import com.cixtrowolf.protoseal.model.restraint.RestraintLockType;
 import com.cixtrowolf.protoseal.persistence.restraint.RestraintStateService;
+import com.cixtrowolf.protoseal.persistence.consent.ConsentService;
+import discord4j.common.util.Snowflake;
+import discord4j.core.object.component.ActionRow;
+import discord4j.core.object.component.Button;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent;
 import org.springframework.stereotype.Component;
@@ -16,10 +20,15 @@ public class PermalockConfirmationListener {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PermalockConfirmationListener.class);
     private final RestraintStateService restraintStateService;
+    private final ConsentService consentService;
+    private final GatewayDiscordClient client;
 
     public PermalockConfirmationListener(RestraintStateService restraintStateService,
+                                         ConsentService consentService,
                                          GatewayDiscordClient client) {
         this.restraintStateService = restraintStateService;
+        this.consentService = consentService;
+        this.client = client;
         client.on(ButtonInteractionEvent.class, this::handle).subscribe();
     }
 
@@ -45,6 +54,11 @@ public class PermalockConfirmationListener {
                     .withComponents();
         }
 
+        if (consentService.requiresRestraintApproval(
+                request.guildId(), request.targetUserId(), request.actorUserId())) {
+            return requestPermalockApproval(event, request);
+        }
+
         return Mono.fromCallable(() -> restraintStateService.updateLocks(
                         request.guildId(), request.targetUserId(), RestraintLockType.PERMALOCK,
                         request.actorUserId()))
@@ -56,6 +70,28 @@ public class PermalockConfirmationListener {
                 .doOnError(error -> LOGGER.error(
                         "Permalock confirmation failed guildId={} actorId={} targetId={}",
                         request.guildId(), request.actorUserId(), request.targetUserId(), error));
+    }
+
+    private Mono<Void> requestPermalockApproval(ButtonInteractionEvent event, PermalockConfirmation request) {
+        return Mono.fromCallable(() -> consentService.createLockRequest(
+                        request.guildId(), request.targetUserId(), request.actorUserId(),
+                        event.getInteraction().getChannelId().asString(), RestraintLockType.PERMALOCK))
+                .subscribeOn(Schedulers.boundedElastic())
+                .flatMap(token -> client.getUserById(Snowflake.of(request.targetUserId()))
+                        .flatMap(user -> user.getPrivateChannel())
+                        .flatMap(channel -> channel.createMessage()
+                                .withContent("<@" + request.actorUserId()
+                                        + "> asks to permanently lock all your active restraints. "
+                                        + "Only `/safeword` can clear this lock. This request expires in 5 minutes.")
+                                .withComponents(ActionRow.of(
+                                        Button.success("consent-restraint:accept:" + token, "Accept permalock"),
+                                        Button.danger("consent-restraint:reject:" + token, "Reject"))))
+                        .then(event.edit("Permalock confirmed by requester. Approval request sent privately to the target.")
+                                .withComponents())
+                        .onErrorResume(error -> Mono.fromRunnable(() -> consentService.cancelRestraintRequest(token))
+                                .subscribeOn(Schedulers.boundedElastic())
+                                .then(event.edit("I could not send the target a DM. The permalock request was cancelled.")
+                                        .withComponents())));
     }
 
     private Mono<Void> editForResult(ButtonInteractionEvent event, PermalockConfirmation request,

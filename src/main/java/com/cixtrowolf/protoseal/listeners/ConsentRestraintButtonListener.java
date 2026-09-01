@@ -3,6 +3,7 @@ package com.cixtrowolf.protoseal.listeners;
 import com.cixtrowolf.protoseal.model.restraint.RestraintDefinition;
 import com.cixtrowolf.protoseal.persistence.consent.ConsentService;
 import com.cixtrowolf.protoseal.persistence.restraint.RestraintStateService;
+import com.cixtrowolf.protoseal.model.restraint.RestraintLockType;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent;
 import discord4j.common.util.Snowflake;
@@ -12,6 +13,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
+
+import java.time.Duration;
 
 @Component
 public class ConsentRestraintButtonListener {
@@ -55,6 +58,15 @@ public class ConsentRestraintButtonListener {
 
     private Mono<Void> applyAccepted(ButtonInteractionEvent event,
                                      com.cixtrowolf.protoseal.persistence.consent.ConsentRestraintRequest request) {
+        return switch (request.getRequestType()) {
+            case RESTRAINT -> applyAcceptedRestraint(event, request);
+            case LOCK -> applyAcceptedLock(event, request);
+            case TIMELOCK -> applyAcceptedTimelock(event, request);
+        };
+    }
+
+    private Mono<Void> applyAcceptedRestraint(ButtonInteractionEvent event,
+                                     com.cixtrowolf.protoseal.persistence.consent.ConsentRestraintRequest request) {
         return Mono.fromCallable(() -> restraintStateService.saveStateApproved(
                         request.getGuildId(), request.getTargetUserId(), request.getZone(), request.getLevel(),
                         request.getActorUserId(), request.getName()))
@@ -68,6 +80,49 @@ public class ConsentRestraintButtonListener {
                     };
                     Mono<Void> editRequest = event.edit(message).withComponents();
                     if (result != RestraintStateService.StateUpdateResult.UPDATED) return editRequest;
+                    return editRequest.then(postAcceptedAction(request));
+                });
+    }
+
+    private Mono<Void> applyAcceptedLock(ButtonInteractionEvent event,
+            com.cixtrowolf.protoseal.persistence.consent.ConsentRestraintRequest request) {
+        return Mono.fromCallable(() -> restraintStateService.updateLocksApproved(request.getGuildId(),
+                        request.getTargetUserId(), request.getLockType(), request.getActorUserId()))
+                .subscribeOn(Schedulers.boundedElastic())
+                .flatMap(result -> {
+                    String message = switch (result) {
+                        case APPLIED, REMOVED -> "Request accepted. The lock change was applied.";
+                        case NO_ACTIVE_RESTRAINT -> "Request accepted, but there are no active restraints.";
+                        case NOT_LOCKED -> "Request accepted, but the restraints are not locked.";
+                        case PERMALOCKED -> "Request accepted, but the restraints are already permanently locked.";
+                        case TIMELOCKED -> "Request accepted, but the restraints are already timelocked.";
+                        case LOCKED_BY_ANOTHER_USER -> "Request accepted, but another user owns the active lock.";
+                        case CONSENT_DENIED -> "The approved request could not be applied.";
+                    };
+                    Mono<Void> editRequest = event.edit(message).withComponents();
+                    if (result != RestraintStateService.LockResult.APPLIED
+                            && result != RestraintStateService.LockResult.REMOVED) return editRequest;
+                    return editRequest.then(postAcceptedAction(request));
+                });
+    }
+
+    private Mono<Void> applyAcceptedTimelock(ButtonInteractionEvent event,
+            com.cixtrowolf.protoseal.persistence.consent.ConsentRestraintRequest request) {
+        return Mono.fromCallable(() -> restraintStateService.applyTimelockApproved(request.getGuildId(),
+                        request.getTargetUserId(), request.getActorUserId(),
+                        Duration.ofMinutes(request.getDurationMinutes())))
+                .subscribeOn(Schedulers.boundedElastic())
+                .flatMap(result -> {
+                    String message = switch (result) {
+                        case APPLIED -> "Request accepted. The timelock was applied.";
+                        case NO_ACTIVE_RESTRAINT -> "Request accepted, but there are no active restraints.";
+                        case ALREADY_LOCKED -> "Request accepted, but the restraints are already locked.";
+                        case PERMALOCKED -> "Request accepted, but the restraints are permanently locked.";
+                        case INVALID_DURATION -> "The approved timelock duration is no longer valid.";
+                        case CONSENT_DENIED -> "The approved request could not be applied.";
+                    };
+                    Mono<Void> editRequest = event.edit(message).withComponents();
+                    if (result != RestraintStateService.TimelockResult.APPLIED) return editRequest;
                     return editRequest.then(postAcceptedAction(request));
                 });
     }
@@ -87,6 +142,23 @@ public class ConsentRestraintButtonListener {
     }
 
     private String acceptedMessage(com.cixtrowolf.protoseal.persistence.consent.ConsentRestraintRequest request) {
+        if (request.getRequestType() == com.cixtrowolf.protoseal.persistence.consent.ConsentRestraintRequest.RequestType.LOCK) {
+            if (request.getLockType() == null) {
+                return "<@" + request.getActorUserId() + "> removed the locks from all of <@"
+                        + request.getTargetUserId() + ">'s active restraints.";
+            }
+            if (request.getLockType() == RestraintLockType.PERMALOCK) {
+                return "🔐 <@" + request.getActorUserId() + "> applied **Permalock** to all of <@"
+                        + request.getTargetUserId() + ">'s active restraints. Only `/safeword` can clear it.";
+            }
+            return "<@" + request.getActorUserId() + "> applied " + request.getLockType().getEmoji()
+                    + " **" + request.getLockType().getDisplayName() + "** to all of <@"
+                    + request.getTargetUserId() + ">'s active restraints.";
+        }
+        if (request.getRequestType() == com.cixtrowolf.protoseal.persistence.consent.ConsentRestraintRequest.RequestType.TIMELOCK) {
+            return "<@" + request.getActorUserId() + "> timelocks all of <@" + request.getTargetUserId()
+                    + ">'s active restraints for **" + request.getDurationMinutes() + " minutes**.";
+        }
         var definition = java.util.Arrays.stream(RestraintDefinition.values())
                 .filter(candidate -> candidate.getZone() == request.getZone())
                 .findFirst().orElse(null);
