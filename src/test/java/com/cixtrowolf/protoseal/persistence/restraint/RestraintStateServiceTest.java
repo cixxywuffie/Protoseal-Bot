@@ -46,6 +46,20 @@ class RestraintStateServiceTest {
     }
 
     @Test
+    void acceptedAskRequestBypassesOnlyTheConsentCheck() {
+        when(repository.findByGuildIdAndUserIdAndLevelGreaterThanOrderByZoneAsc("guild", "target", 0))
+                .thenReturn(List.of());
+        when(repository.findByGuildIdAndUserIdAndZone("guild", "target", RestraintZone.GAG))
+                .thenReturn(Optional.empty());
+
+        var result = service.saveStateApproved("guild", "target", RestraintZone.GAG, 1, "actor", "ball gag");
+
+        assertEquals(RestraintStateService.StateUpdateResult.UPDATED, result);
+        verify(consentService, never()).canManageRestraints(any(), any(), any());
+        verify(repository).save(any(RestraintState.class));
+    }
+
+    @Test
     void lockedRestraintCannotBeChangedEvenByItsLocker() {
         allowConsent();
         var state = state(RestraintZone.GAG, 1, "ball gag");

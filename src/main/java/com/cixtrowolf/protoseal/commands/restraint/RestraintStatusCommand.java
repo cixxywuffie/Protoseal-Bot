@@ -115,6 +115,7 @@ public class RestraintStatusCommand implements SlashCommandInterface {
     private String formatConsent(ConsentService.ConsentStatus consent) {
         return switch (consent.mode()) {
             case SELF_ONLY -> "🔒 **Self only** — only this user can manage their restraints.";
+            case ASK -> "🙋 **Ask** — changes requested by other users require this user's approval.";
             case EXPOSED -> "🌐 **Exposed** — other users may manage their restraints and locks.";
             case OWNER -> "👤 **Owner** — only "
                     + (consent.ownerUserId() == null ? "the selected owner" : "<@" + consent.ownerUserId() + ">")

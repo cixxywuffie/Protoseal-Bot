@@ -10,6 +10,7 @@
       "required": true,
       "choices": [
         { "name": "Self only", "value": "SELF_ONLY" },
+        { "name": "Ask", "value": "ASK" },
         { "name": "Exposed", "value": "EXPOSED" },
         { "name": "Owner", "value": "OWNER" },
         { "name": "Disabled", "value": "DISABLED" }
