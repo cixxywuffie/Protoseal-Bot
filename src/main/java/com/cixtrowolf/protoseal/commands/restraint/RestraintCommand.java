@@ -3,10 +3,13 @@ package com.cixtrowolf.protoseal.commands.restraint;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
 import discord4j.core.object.command.ApplicationCommandInteractionOption;
 import discord4j.core.object.entity.User;
+import discord4j.core.object.component.ActionRow;
+import discord4j.core.object.component.Button;
 import com.cixtrowolf.protoseal.commands.SlashCommandInterface;
 import com.cixtrowolf.protoseal.model.restraint.RestraintDefinition;
 import com.cixtrowolf.protoseal.model.restraint.RestraintLevel;
 import com.cixtrowolf.protoseal.persistence.restraint.RestraintStateService;
+import com.cixtrowolf.protoseal.persistence.consent.ConsentService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -19,9 +22,11 @@ public class RestraintCommand implements SlashCommandInterface {
     private static final Logger LOGGER = LoggerFactory.getLogger(RestraintCommand.class);
 
     private final RestraintStateService restraintStateService;
+    private final ConsentService consentService;
 
-    public RestraintCommand(RestraintStateService restraintStateService) {
+    public RestraintCommand(RestraintStateService restraintStateService, ConsentService consentService) {
         this.restraintStateService = restraintStateService;
+        this.consentService = consentService;
     }
 
     @Override
@@ -73,6 +78,19 @@ public class RestraintCommand implements SlashCommandInterface {
         boolean selfTarget = target.getId().equals(actor.getId());
         RestraintLevel selectedLevel = definition.getLevel(level);
         String response = selfTarget ? selectedLevel.selfMessage() : selectedLevel.message();
+
+        if (consentService.requiresRestraintApproval(guildId, target.getId().asString(), actor.getId().asString())) {
+            return Mono.fromCallable(() -> consentService.createRestraintRequest(
+                            guildId, target.getId().asString(), actor.getId().asString(), definition.getZone(),
+                            level, selectedLevel.name()))
+                    .subscribeOn(Schedulers.boundedElastic())
+                    .flatMap(token -> event.reply(actor.getMention() + " asks to set " + target.getMention()
+                                    + "'s **" + definition.getCommandName() + "** to **" + selectedLevel.name()
+                                    + "**. This request expires in 5 minutes.")
+                            .withComponents(ActionRow.of(
+                                    Button.success("consent-restraint:accept:" + token, "Accept"),
+                                    Button.danger("consent-restraint:reject:" + token, "Reject"))));
+        }
 
         return Mono.fromCallable(() -> restraintStateService.saveState(
                         guildId, target.getId().asString(), definition.getZone(), level, actor.getId().asString(), selectedLevel.name()))

@@ -26,6 +26,12 @@ public class RestraintStateService {
         if (!consentService.canManageRestraints(guildId, userId, actorId)) {
             return StateUpdateResult.CONSENT_DENIED;
         }
+        return saveStateApproved(guildId, userId, zone, level, actorId, name);
+    }
+
+    @Transactional
+    public StateUpdateResult saveStateApproved(String guildId, String userId, RestraintZone zone, int level,
+                                               String actorId, String name) {
         var activeStates = repository
                 .findByGuildIdAndUserIdAndLevelGreaterThanOrderByZoneAsc(guildId, userId, 0);
         if (zone != RestraintZone.MITTS

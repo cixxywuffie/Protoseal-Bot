@@ -27,11 +27,14 @@ class ConsentServiceTest {
     @Mock
     private ConsentOwnerRequestRepository ownerRequestRepository;
 
+    @Mock
+    private ConsentRestraintRequestRepository restraintRequestRepository;
+
     private ConsentService consentService;
 
     @BeforeEach
     void setUp() {
-        consentService = new ConsentService(settingRepository, ownerRequestRepository);
+        consentService = new ConsentService(settingRepository, ownerRequestRepository, restraintRequestRepository);
     }
 
     @Test
@@ -72,6 +75,33 @@ class ConsentServiceTest {
     }
 
     @Test
+    void askAllowsSelfAndRequiresApprovalForOtherUsers() {
+        var setting = new ConsentSetting("guild", "target", ConsentMode.ASK, null);
+        when(settingRepository.findByGuildIdAndUserId("guild", "target")).thenReturn(Optional.of(setting));
+
+        assertTrue(consentService.canManageRestraints("guild", "target", "target"));
+        assertFalse(consentService.canManageRestraints("guild", "target", "other"));
+        assertTrue(consentService.requiresRestraintApproval("guild", "target", "other"));
+        assertFalse(consentService.requiresRestraintApproval("guild", "target", "target"));
+    }
+
+    @Test
+    void acceptedAskRequestIsSingleUseAndReturnsTheApprovedAction() {
+        var setting = new ConsentSetting("guild", "target", ConsentMode.ASK, null);
+        var request = new ConsentRestraintRequest("token", "guild", "target", "actor",
+                com.cixtrowolf.protoseal.model.restraint.RestraintZone.GAG, 1, "ball gag",
+                Instant.now().plusSeconds(60));
+        when(restraintRequestRepository.findByToken("token")).thenReturn(Optional.of(request));
+        when(settingRepository.findByGuildIdAndUserId("guild", "target")).thenReturn(Optional.of(setting));
+
+        var response = consentService.respondToRestraintRequest("token", "target", true);
+
+        assertEquals(ConsentService.RestraintRequestResult.ACCEPTED, response.result());
+        assertEquals(request, response.request());
+        verify(restraintRequestRepository).delete(request);
+    }
+
+    @Test
     void ownerAllowsOnlyTheSelectedOwner() {
         var setting = new ConsentSetting("guild", "target", ConsentMode.OWNER, "owner");
         when(settingRepository.findByGuildIdAndUserId("guild", "target")).thenReturn(Optional.of(setting));
@@ -98,6 +128,7 @@ class ConsentServiceTest {
         consentService.updateConsent("guild", "target", ConsentMode.EXPOSED, null);
 
         verify(ownerRequestRepository).deleteByGuildIdAndRequesterUserId("guild", "target");
+        verify(restraintRequestRepository).deleteByGuildIdAndTargetUserId("guild", "target");
         assertEquals(ConsentMode.EXPOSED, setting.getMode());
         assertEquals(null, setting.getOwnerUserId());
         verify(settingRepository, never()).save(any());
