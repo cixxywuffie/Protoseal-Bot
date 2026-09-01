@@ -147,7 +147,7 @@ public class ConsentCommand implements SlashCommandInterface {
     private String consentMessage(ConsentMode mode, String ownerUserId) {
         return switch (mode) {
             case SELF_ONLY -> "Consent updated to **self only**. Only you can manage your restraints.";
-            case ASK -> "Consent updated to **ask**. Other users must request your approval before changing your restraints.";
+            case ASK -> "Consent updated to **ask**. Other users must request your approval before changing your restraints or locks.";
             case EXPOSED -> "Consent updated to **exposed**. Other users can manage your restraints and locks.";
             case OWNER -> "Consent updated to **owner**. Only <@" + ownerUserId
                     + "> can manage your restraints and locks.";
