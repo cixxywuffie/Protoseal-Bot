@@ -5,6 +5,7 @@ import com.cixtrowolf.protoseal.listeners.ConsentRestraintButtonListener;
 import com.cixtrowolf.protoseal.listeners.GlobalCommandRegistrar;
 import com.cixtrowolf.protoseal.listeners.PermalockConfirmationListener;
 import com.cixtrowolf.protoseal.listeners.SlashCommandListener;
+import com.cixtrowolf.protoseal.listeners.MemberLeaveListener;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.rest.RestClient;
 import org.junit.jupiter.api.Test;
@@ -35,6 +36,9 @@ class ProtoSealApplicationTests {
 
 	@MockitoBean
 	private PermalockConfirmationListener permalockConfirmationListener;
+
+	@MockitoBean
+	private MemberLeaveListener memberLeaveListener;
 
 	@MockitoBean
 	private GlobalCommandRegistrar globalCommandRegistrar;
