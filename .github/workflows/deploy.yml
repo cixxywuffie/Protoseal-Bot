@@ -1,41 +1,70 @@
-name: Deploy development
+name: 🛠️ Deploy development
 
 on:
   push:
     branches: [develop]
   workflow_dispatch:
+    inputs:
+      branch:
+        description: Branch to validate or deploy (develop or feature/*)
+        required: true
+        default: develop
+        type: string
+      action:
+        description: Validate the branch only or deploy it to development
+        required: true
+        default: test-only
+        type: choice
+        options:
+          - test-only
+          - deploy
 
 permissions:
   contents: read
 
-concurrency:
-  group: development
-  cancel-in-progress: false
-
 jobs:
-  validate-ref:
-    name: Validate development branch
+  validate:
+    name: Validate and resolve development branch
     runs-on: ubuntu-latest
+    outputs:
+      deploy_branch: ${{ steps.ref.outputs.branch }}
+      deploy_sha: ${{ steps.ref.outputs.sha }}
     steps:
       - name: Allow develop or feature branches
         env:
-          DEPLOY_BRANCH: ${{ github.ref_name }}
+          DEPLOY_BRANCH: ${{ inputs.branch || github.ref_name }}
         run: |
           if [[ "$DEPLOY_BRANCH" == "develop" || "$DEPLOY_BRANCH" =~ ^feature/[A-Za-z0-9._/-]+$ ]]; then
-            echo "Deploying development branch: $DEPLOY_BRANCH"
+            echo "Selected development branch: $DEPLOY_BRANCH"
           else
             echo "::error::Development deployments only accept develop or feature/* branches"
             exit 1
           fi
 
+      - name: Checkout selected branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch || github.ref_name }}
+          fetch-depth: 0
+
+      - name: Record selected commit
+        id: ref
+        env:
+          DEPLOY_BRANCH: ${{ inputs.branch || github.ref_name }}
+        run: |
+          echo "branch=$DEPLOY_BRANCH" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
   test:
     name: Maven tests (Java 21)
-    needs: validate-ref
+    needs: validate
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate.outputs.deploy_sha }}
 
       - name: Set up Java 21
         uses: actions/setup-java@v4
@@ -51,10 +80,14 @@ jobs:
 
   deploy:
     name: Deploy to development
-    needs: test
+    needs: [validate, test]
+    if: github.event_name == 'push' || inputs.action == 'deploy'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     environment: development
+    concurrency:
+      group: development
+      cancel-in-progress: false
     steps:
       - name: Configure SSH
         env:
@@ -72,8 +105,8 @@ jobs:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
-          DEPLOY_SHA: ${{ github.sha }}
-          DEPLOY_BRANCH: ${{ github.ref_name }}
+          DEPLOY_SHA: ${{ needs.validate.outputs.deploy_sha }}
+          DEPLOY_BRANCH: ${{ needs.validate.outputs.deploy_branch }}
         run: |
           test -n "$SSH_PRIVATE_KEY" || { echo "::error::SSH_PRIVATE_KEY is empty"; exit 1; }
           test -n "$SSH_KNOWN_HOSTS" || { echo "::error::SSH_KNOWN_HOSTS is empty"; exit 1; }
@@ -92,8 +125,8 @@ jobs:
           DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
-          DEPLOY_SHA: ${{ github.sha }}
-          DEPLOY_BRANCH: ${{ github.ref_name }}
+          DEPLOY_SHA: ${{ needs.validate.outputs.deploy_sha }}
+          DEPLOY_BRANCH: ${{ needs.validate.outputs.deploy_branch }}
         run: |
           ssh -i ~/.ssh/deploy_key \
             -o BatchMode=yes \
@@ -101,4 +134,4 @@ jobs:
             -o StrictHostKeyChecking=yes \
             -p "${DEPLOY_PORT:-22}" \
             "$DEPLOY_USER@$DEPLOY_HOST" \
-            "cd '$DEPLOY_PATH' && git fetch origin '$DEPLOY_BRANCH' && git checkout '$DEPLOY_BRANCH' && git merge --ff-only '$DEPLOY_SHA' && docker compose up --build --detach --remove-orphans && docker compose ps"
+            "cd '$DEPLOY_PATH' && git fetch origin '$DEPLOY_BRANCH' && git checkout --detach '$DEPLOY_SHA' && docker compose up --build --detach --remove-orphans && docker compose ps"
