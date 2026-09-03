@@ -226,12 +226,13 @@ development server over SSH, switch to the selected branch, fast-forward its che
 Compose services. It can also be started manually from the Actions tab using GitHub's branch selector;
 manual deployments accept `develop` and `feature/*` branches, and the tests remain mandatory.
 
-Production releases start manually from `.github/workflows/release.yml`. Select `main`, enter a
-semantic version such as `v1.2.3`, and run the workflow. It validates the version, runs the Maven
-verification, creates the corresponding tag and GitHub Release, and only then calls the reusable
-`.github/workflows/deploy-production.yml` workflow with the exact tagged commit. A successful
-development deployment can therefore never promote itself to production. Both deployment workflows
-leave the server's `.env` file and the `mariadb-data` volume untouched.
+Production releases and deployments are deliberately separate. Start `.github/workflows/release.yml`
+manually from `main`, enter a semantic version such as `v1.2.3`, and run it to validate, test and create
+the corresponding tag and GitHub Release. When that version is ready to deploy, start
+`.github/workflows/deploy-production.yml` manually from `main` and enter the existing tag. It resolves
+and validates the tag, checks out and tests exactly that version, and only then deploys its commit. A
+successful development deployment can therefore never promote itself to production. Both deployment
+workflows leave the server's `.env` file and the `mariadb-data` volume untouched.
 
 Before enabling deployment:
 
@@ -258,9 +259,10 @@ uses a detached checkout of the released commit. Both therefore deploy the exact
 with the workflow without silently overwriting local modifications or selecting an untested later
 commit. A failed
 test prevents its corresponding deployment, and deployments to each environment are serialized
-independently. Production must be started manually through **Release and deploy production** and only
-accepts unused `vMAJOR.MINOR.PATCH` versions from `main`. If the server-side Docker build fails,
-Compose leaves the currently running containers in place and reports the failed deployment.
+independently. Create versions through **Create release** using an unused `vMAJOR.MINOR.PATCH` value.
+Deploy them separately through **Deploy production** by providing an existing tag from `main`.
+If the server-side Docker build fails, Compose leaves the currently running containers in place and
+reports the failed deployment.
 
 ## Logging
 
