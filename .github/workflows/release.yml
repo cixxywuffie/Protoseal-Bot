@@ -1,0 +1,94 @@
+name: Release and deploy production
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Semantic version tag (for example, v1.2.3)
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-production
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require main and a semantic version
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "::error::Production releases must be run from main"
+            exit 1
+          fi
+          if [[ ! "$VERSION" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo "::error::Version must use the vMAJOR.MINOR.PATCH format"
+            exit 1
+          fi
+
+  test:
+    name: Maven tests (Java 21)
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Run tests
+        run: |
+          chmod +x mvnw
+          ./mvnw --batch-mode --no-transfer-progress verify
+
+  release:
+    name: Create tag and GitHub Release
+    needs: test
+    runs-on: ubuntu-latest
+    outputs:
+      deploy_sha: ${{ steps.commit.outputs.sha }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Ensure tag does not exist
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          if git show-ref --verify --quiet "refs/tags/$VERSION"; then
+            echo "::error::Tag $VERSION already exists"
+            exit 1
+          fi
+
+      - name: Record release commit
+        id: commit
+        run: echo "sha=$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Create tag and release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+        run: gh release create "$VERSION" --target "$GITHUB_SHA" --title "$VERSION" --generate-notes
+
+  deploy:
+    name: Deploy released version
+    needs: release
+    uses: ./.github/workflows/deploy-production.yml
+    with:
+      deploy_sha: ${{ needs.release.outputs.deploy_sha }}
+    secrets: inherit
