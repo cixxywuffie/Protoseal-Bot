@@ -3,6 +3,7 @@ package com.cixtrowolf.protoseal;
 import com.cixtrowolf.protoseal.listeners.ConsentOwnerButtonListener;
 import com.cixtrowolf.protoseal.listeners.ConsentRestraintButtonListener;
 import com.cixtrowolf.protoseal.listeners.GlobalCommandRegistrar;
+import com.cixtrowolf.protoseal.listeners.GuildDeleteListener;
 import com.cixtrowolf.protoseal.listeners.PermalockConfirmationListener;
 import com.cixtrowolf.protoseal.listeners.SlashCommandListener;
 import com.cixtrowolf.protoseal.listeners.MemberLeaveListener;
@@ -39,6 +40,9 @@ class ProtoSealApplicationTests {
 
 	@MockitoBean
 	private MemberLeaveListener memberLeaveListener;
+
+	@MockitoBean
+	private GuildDeleteListener guildDeleteListener;
 
 	@MockitoBean
 	private GlobalCommandRegistrar globalCommandRegistrar;

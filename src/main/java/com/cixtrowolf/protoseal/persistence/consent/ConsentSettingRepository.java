@@ -12,4 +12,6 @@ public interface ConsentSettingRepository extends JpaRepository<ConsentSetting, 
     List<ConsentSetting> findByGuildIdAndOwnerUserId(String guildId, String ownerUserId);
 
     void deleteByGuildIdAndUserId(String guildId, String userId);
+
+    void deleteAllByGuildId(String guildId);
 }

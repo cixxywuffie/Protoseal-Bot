@@ -8,4 +8,5 @@ public interface ConsentRestraintRequestRepository extends JpaRepository<Consent
     Optional<ConsentRestraintRequest> findByToken(String token);
     void deleteByGuildIdAndTargetUserId(String guildId, String targetUserId);
     void deleteByGuildIdAndActorUserId(String guildId, String actorUserId);
+    void deleteAllByGuildId(String guildId);
 }
