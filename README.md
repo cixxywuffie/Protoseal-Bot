@@ -216,24 +216,33 @@ The suite covers consent authorization, owner invitations, lock propagation, res
 
 ## CI/CD with GitHub Actions
 
-The public CI workflow in `.github/workflows/tests.yml` runs the Maven test suite for pull requests and
-pushes to `main`. It has read-only repository permissions and receives no deployment secrets, making it
-safe for contributions to a public repository.
+The public CI workflow in `.github/workflows/tests.yml` runs the Maven test suite for pull requests to
+`main`. It has read-only repository permissions and receives no deployment secrets, making it safe for
+contributions to a public repository.
 
-After the tests for a push to `main` complete successfully, `.github/workflows/deploy.yml` connects to
-the development server over SSH, fast-forwards its checkout and rebuilds the Compose services. It can
-also be started manually from the Actions tab. The server's `.env` file and the `mariadb-data` volume
-are not replaced.
+For pushes to `develop`, `.github/workflows/deploy.yml` validates the branch and runs the same Maven
+verification before deployment. Only if those jobs succeed does its deployment job connect to the
+development server over SSH, switch to the selected branch, fast-forward its checkout and rebuild the
+Compose services. It can also be started manually from the Actions tab using GitHub's branch selector;
+manual deployments accept `develop` and `feature/*` branches, and the tests remain mandatory.
+
+Production releases start manually from `.github/workflows/release.yml`. Select `main`, enter a
+semantic version such as `v1.2.3`, and run the workflow. It validates the version, runs the Maven
+verification, creates the corresponding tag and GitHub Release, and only then calls the reusable
+`.github/workflows/deploy-production.yml` workflow with the exact tagged commit. A successful
+development deployment can therefore never promote itself to production. Both deployment workflows
+leave the server's `.env` file and the `mariadb-data` volume untouched.
 
 Before enabling deployment:
 
-1. On the server, clone the repository, create its development `.env`, and verify that
+1. On each server, clone the repository, create its environment-specific `.env`, and verify that
    `docker compose up --build -d` works for the deployment user.
 2. Give that user read access to the GitHub repository and permission to run Docker without an
    interactive password prompt.
-3. Create a GitHub environment named `development` under **Settings > Environments**. Optional approval
-   rules can be added there.
-4. Add these environment secrets:
+3. Create GitHub environments named `development` and `production` under **Settings > Environments**.
+   Configure a required reviewer for `production` to protect manual releases.
+4. Add the following secrets separately to each environment. The names stay the same while their
+   values point to the corresponding server:
 
 | Secret | Value |
 | --- | --- |
@@ -244,10 +253,14 @@ Before enabling deployment:
 | `SSH_PRIVATE_KEY` | Private key dedicated to GitHub Actions. Add its public key to the server user's `~/.ssh/authorized_keys`. |
 | `SSH_KNOWN_HOSTS` | Verified server host-key line, obtained from a trusted machine with `ssh-keyscan -H -p PORT HOST`. |
 
-Keep the server checkout on `main` with no local code changes. The deployment intentionally uses
-`git pull --ff-only`, so it stops instead of overwriting unexpected server-side modifications. A failed
-test prevents deployment, and concurrent deployments are serialized. If the server-side Docker build
-fails, Compose leaves the currently running containers in place and reports the failed deployment.
+Keep the server checkouts free of local code changes. Development uses `git merge --ff-only`; production
+uses a detached checkout of the released commit. Both therefore deploy the exact commit associated
+with the workflow without silently overwriting local modifications or selecting an untested later
+commit. A failed
+test prevents its corresponding deployment, and deployments to each environment are serialized
+independently. Production must be started manually through **Release and deploy production** and only
+accepts unused `vMAJOR.MINOR.PATCH` versions from `main`. If the server-side Docker build fails,
+Compose leaves the currently running containers in place and reports the failed deployment.
 
 ## Logging
 
