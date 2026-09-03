@@ -223,12 +223,14 @@ contributions to a public repository.
 For pushes to `develop`, `.github/workflows/deploy.yml` validates the branch and runs the same Maven
 verification before deployment. Only if those jobs succeed does its deployment job connect to the
 development server over SSH, switch to the selected branch, fast-forward its checkout and rebuild the
-Compose services. It can also be started manually from the Actions tab using GitHub's branch selector;
-manual deployments accept `develop` and `feature/*` branches, and the tests remain mandatory.
+Compose services. It can also be started manually from the Actions tab: enter the desired `develop` or
+`feature/*` branch in the `branch` field, then choose an action. `test-only` validates the selected
+branch without contacting the server, while `deploy` runs the same mandatory tests and then deploys
+the exact resolved commit. Pushes to `develop` continue to test and deploy automatically.
 
 Production releases and deployments are deliberately separate. Start `.github/workflows/release.yml`
-manually from `main`, enter a semantic version such as `v1.2.3`, and run it to validate, test and create
-the corresponding tag and GitHub Release. When that version is ready to deploy, start
+manually from `main`, enter a semantic tag name such as `v1.2.3` in `tag_name`, and run it to validate,
+test and create the corresponding tag and GitHub Release. When that version is ready to deploy, start
 `.github/workflows/deploy-production.yml` manually from `main` and enter the existing tag. It resolves
 and validates the tag, checks out and tests exactly that version, and only then deploys its commit. A
 successful development deployment can therefore never promote itself to production. Both deployment
@@ -254,13 +256,12 @@ Before enabling deployment:
 | `SSH_PRIVATE_KEY` | Private key dedicated to GitHub Actions. Add its public key to the server user's `~/.ssh/authorized_keys`. |
 | `SSH_KNOWN_HOSTS` | Verified server host-key line, obtained from a trusted machine with `ssh-keyscan -H -p PORT HOST`. |
 
-Keep the server checkouts free of local code changes. Development uses `git merge --ff-only`; production
-uses a detached checkout of the released commit. Both therefore deploy the exact commit associated
-with the workflow without silently overwriting local modifications or selecting an untested later
-commit. A failed
+Keep the server checkouts free of local code changes. Both deployments use a detached checkout of the
+commit resolved and tested by their workflow, preventing a branch update during execution from
+silently selecting a later, untested commit. A failed
 test prevents its corresponding deployment, and deployments to each environment are serialized
-independently. Create versions through **Create release** using an unused `vMAJOR.MINOR.PATCH` value.
-Deploy them separately through **Deploy production** by providing an existing tag from `main`.
+independently. Create versions through **🏷️ Create version** using an unused `vMAJOR.MINOR.PATCH` value.
+Deploy them separately through **🚀 Deploy production** by providing an existing tag from `main`.
 If the server-side Docker build fails, Compose leaves the currently running containers in place and
 reports the failed deployment.
 
