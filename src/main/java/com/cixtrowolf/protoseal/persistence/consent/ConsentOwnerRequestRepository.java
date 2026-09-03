@@ -11,4 +11,6 @@ public interface ConsentOwnerRequestRepository extends JpaRepository<ConsentOwne
     Optional<ConsentOwnerRequest> findByGuildIdAndRequesterUserId(String guildId, String requesterUserId);
 
     void deleteByGuildIdAndRequesterUserId(String guildId, String requesterUserId);
+
+    void deleteByGuildIdAndOwnerUserId(String guildId, String ownerUserId);
 }
