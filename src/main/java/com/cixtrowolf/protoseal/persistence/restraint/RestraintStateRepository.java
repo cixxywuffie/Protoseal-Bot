@@ -15,5 +15,7 @@ public interface RestraintStateRepository extends JpaRepository<RestraintState, 
 
     void deleteByGuildIdAndUserId(String guildId, String userId);
 
+    void deleteAllByGuildId(String guildId);
+
     List<RestraintState> findByGuildIdAndLockedByUserId(String guildId, String lockedByUserId);
 }

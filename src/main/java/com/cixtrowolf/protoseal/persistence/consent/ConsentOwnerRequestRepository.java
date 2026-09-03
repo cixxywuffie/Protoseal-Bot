@@ -13,4 +13,6 @@ public interface ConsentOwnerRequestRepository extends JpaRepository<ConsentOwne
     void deleteByGuildIdAndRequesterUserId(String guildId, String requesterUserId);
 
     void deleteByGuildIdAndOwnerUserId(String guildId, String ownerUserId);
+
+    void deleteAllByGuildId(String guildId);
 }
