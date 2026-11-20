@@ -16,7 +16,7 @@ import org.springframework.context.annotation.Configuration;
 public class AppConfig {
 
     static final IntentSet ENABLED_INTENTS = IntentSet.nonPrivileged()
-            .or(IntentSet.of(Intent.GUILD_MEMBERS));
+            .or(IntentSet.of(Intent.GUILD_MEMBERS, Intent.MESSAGE_CONTENT));
 
     private static String tokenHolder;
 

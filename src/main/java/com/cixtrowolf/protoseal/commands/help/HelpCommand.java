@@ -22,7 +22,7 @@ public class HelpCommand implements SlashCommandInterface {
                 + "`/armcuffs target level` — changes arm restraints.\n"
                 + "`/donate` — shows how to support the project.\n"
                 + "`/legcuffs target level` — changes leg restraints.\n"
-                + "`/gag target level` — changes gag restraints.\n"
+                + "`/gag target [type] [intensity]` — changes a gag and optionally its saved speech intensity.\n"
                 + "`/hood target level` — changes hood restraints.\n"
                 + "`/straitjacket target level` — changes straitjacket restraints.\n"
                 + "`/suits target level` — changes restraint suits.\n"

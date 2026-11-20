@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.cixtrowolf.protoseal.model.restraint.RestraintDefinition;
 import com.cixtrowolf.protoseal.model.restraint.RestraintLockType;
+import com.cixtrowolf.protoseal.model.restraint.GagIntensity;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -83,6 +84,17 @@ class CommandManifestTest {
                 .collect(java.util.stream.Collectors.toSet());
 
         assertEquals(expectedValues, registeredValues);
+    }
+
+    @Test
+    void gagManifestExposesEveryIntensity() throws IOException {
+        JsonNode option = findOption(readManifest("gag"), "intensity");
+        assertEquals(3, option.path("type").asInt());
+        assertFalse(option.path("required").asBoolean());
+        var choices = new HashSet<String>();
+        option.path("choices").forEach(choice -> choices.add(choice.path("value").asText()));
+        assertEquals(Stream.of(GagIntensity.values()).map(Enum::name)
+                .collect(java.util.stream.Collectors.toSet()), choices);
     }
 
     @Test

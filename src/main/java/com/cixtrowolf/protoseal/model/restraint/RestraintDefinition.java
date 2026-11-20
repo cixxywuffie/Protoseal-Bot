@@ -131,6 +131,8 @@ public enum RestraintDefinition {
             level("cement", "%s encases %s in hardened cement", "%s encases themselves in hardened cement"),
             level("glue", "%s immobilizes %s inside a layer of strong glue", "%s immobilizes themselves inside a layer of strong glue"));
 
+    public static final int REINDEER_MUZZLE_LEVEL = 11;
+
     private static final Map<String, RestraintDefinition> BY_COMMAND = Arrays.stream(values())
             .collect(Collectors.toUnmodifiableMap(RestraintDefinition::getCommandName, Function.identity()));
 

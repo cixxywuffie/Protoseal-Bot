@@ -10,6 +10,7 @@ import com.cixtrowolf.protoseal.persistence.consent.ConsentService;
 import com.cixtrowolf.protoseal.persistence.restraint.RestraintState;
 import com.cixtrowolf.protoseal.persistence.restraint.RestraintStateService;
 import com.cixtrowolf.protoseal.model.restraint.RestraintZone;
+import com.cixtrowolf.protoseal.model.restraint.GagIntensity;
 import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,24 +54,26 @@ public class RestraintStatusCommand implements SlashCommandInterface {
 
         return target.flatMap(user -> Mono.fromCallable(() -> new StatusData(
                         restraintStateService.findActiveStates(guildId.get().asString(), user.getId().asString()),
-                        consentService.getConsentStatus(guildId.get().asString(), user.getId().asString())))
+                        consentService.getConsentStatus(guildId.get().asString(), user.getId().asString()),
+                        consentService.getGagIntensity(guildId.get().asString(), user.getId().asString())))
                 .subscribeOn(Schedulers.boundedElastic())
                 .doOnNext(status -> LOGGER.debug(
                         "Restraint status loaded guildId={} requesterId={} targetId={} activeStates={} consentMode={}",
                         guildId.get(), event.getInteraction().getUser().getId(), user.getId(),
                         status.states().size(), status.consent().mode()))
                 .flatMap(status -> event.reply()
-                        .withEmbeds(createStatusEmbed(user, status.states(), status.consent()))));
+                        .withEmbeds(createStatusEmbed(user, status.states(), status.consent(), status.gagIntensity()))));
     }
 
     private EmbedCreateSpec createStatusEmbed(User user, List<RestraintState> states,
-                                              ConsentService.ConsentStatus consent) {
+                                              ConsentService.ConsentStatus consent, GagIntensity intensity) {
         var embed = EmbedCreateSpec.builder()
                 .color(Color.of(EMBED_COLOR))
                 .title("Active restraints")
                 .description("Status for " + user.getMention());
 
         embed.addField("🤝 Consent", formatConsent(consent), false);
+        embed.addField("Gag speech preference", intensity.name().toLowerCase(java.util.Locale.ROOT), false);
 
         if (states.isEmpty()) {
             return embed.addField("Status", "✅ No active restraints.", false).build();
@@ -124,7 +127,8 @@ public class RestraintStatusCommand implements SlashCommandInterface {
         };
     }
 
-    private record StatusData(List<RestraintState> states, ConsentService.ConsentStatus consent) {
+    private record StatusData(List<RestraintState> states, ConsentService.ConsentStatus consent,
+                              GagIntensity gagIntensity) {
     }
 
 }

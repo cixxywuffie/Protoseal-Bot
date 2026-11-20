@@ -25,6 +25,20 @@
         { "name": "Panel gag", "value": 9 }, { "name": "Inflatable gag", "value": 10 },
         { "name": "Reindeer muzzle", "value": 11 }
       ]
+    },
+    {
+      "name": "intensity",
+      "description": "Saved speech effect preference; special gags override it.",
+      "type": 3,
+      "required": false,
+      "choices": [
+        { "name": "Default for gag", "value": "DEFAULT" },
+        { "name": "None", "value": "NONE" },
+        { "name": "Light", "value": "LIGHT" },
+        { "name": "Medium", "value": "MEDIUM" },
+        { "name": "Strong", "value": "STRONG" },
+        { "name": "Extreme", "value": "EXTREME" }
+      ]
     }
   ]
 }

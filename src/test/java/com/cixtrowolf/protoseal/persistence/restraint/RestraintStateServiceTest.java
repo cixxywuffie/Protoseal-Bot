@@ -1,6 +1,7 @@
 package com.cixtrowolf.protoseal.persistence.restraint;
 
 import com.cixtrowolf.protoseal.model.restraint.RestraintLockType;
+import com.cixtrowolf.protoseal.model.restraint.GagIntensity;
 import com.cixtrowolf.protoseal.model.restraint.RestraintZone;
 import com.cixtrowolf.protoseal.persistence.consent.ConsentService;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,6 +44,25 @@ class RestraintStateServiceTest {
         assertEquals(RestraintStateService.StateUpdateResult.CONSENT_DENIED, result);
         verify(repository, never()).findByGuildIdAndUserIdAndLevelGreaterThanOrderByZoneAsc(any(), any(), any(Integer.class));
         verify(repository, never()).save(any());
+    }
+
+    @Test
+    void gagIntensityChangesOnlyWhenTheRestraintChangeSucceeds() {
+        allowConsent();
+        var locked = state(RestraintZone.GAG, 1, "ball gag");
+        locked.applyLock(RestraintLockType.PADLOCK, "actor");
+        when(repository.findByGuildIdAndUserIdAndLevelGreaterThanOrderByZoneAsc("guild", "target", 0))
+                .thenReturn(List.of(locked));
+        when(repository.findByGuildIdAndUserIdAndZone("guild", "target", RestraintZone.GAG))
+                .thenReturn(Optional.of(locked));
+        assertEquals(RestraintStateService.StateUpdateResult.LOCKED,
+                service.saveState("guild", "target", RestraintZone.GAG, 2, "actor", "bit gag", GagIntensity.LIGHT));
+        verify(consentService, never()).setGagIntensity(any(), any(), any());
+
+        locked.removeLock();
+        assertEquals(RestraintStateService.StateUpdateResult.UPDATED,
+                service.saveState("guild", "target", RestraintZone.GAG, 2, "actor", "bit gag", GagIntensity.LIGHT));
+        verify(consentService).setGagIntensity("guild", "target", GagIntensity.LIGHT);
     }
 
     @Test
