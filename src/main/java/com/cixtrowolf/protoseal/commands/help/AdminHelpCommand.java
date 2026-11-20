@@ -41,6 +41,7 @@ public class AdminHelpCommand implements SlashCommandInterface {
                                         + "in an emergency.\n"
                                         + "`/channelconfig block|unblock|list|clear` — blocks selected NSFW channels "
                                         + "where the bot should be unavailable.\n\n"
+                                        + "`/channelconfig gag-effect enabled` — enables or disables webhook gag speech.\n"
                                         + "Administrator access never bypasses a user's normal consent settings.")
                                 .withEphemeral(true)
                         : event.reply("Only server administrators can use this command.").withEphemeral(true));

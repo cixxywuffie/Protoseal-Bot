@@ -10,5 +10,6 @@ class AppConfigTest {
     @Test
     void enablesGuildMembersIntentForMemberLeaveEvents() {
         assertTrue(AppConfig.ENABLED_INTENTS.contains(Intent.GUILD_MEMBERS));
+        assertTrue(AppConfig.ENABLED_INTENTS.contains(Intent.MESSAGE_CONTENT));
     }
 }

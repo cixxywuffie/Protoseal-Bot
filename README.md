@@ -21,6 +21,7 @@ Created by [CixtroWolf](https://bsky.app/profile/bsky.cixtrowolf.com).
 - Per-server blacklist for disabling the bot in selected NSFW channels.
 - Persistent state using H2 locally and MariaDB in containerized environments.
 - Discord embeds for restraint status.
+- Optional, server-enabled gag speech effects using Discord webhooks.
 
 ## Consent modes
 
@@ -42,7 +43,7 @@ Consent is scoped to each Discord server. Administrators can use `/consentreset`
 | --- | --- | --- |
 | `/armcuffs` | `target`, `type` | Change arm restraints, including armbinders, cuffs, belts and restrictive arm positions. |
 | `/legcuffs` | `target`, `type` | Change leg restraints, including cuffs, hobbles, spreader bars and hogties. |
-| `/gag` | `target`, `type` | Apply or remove ball gags, bit gags, muzzles and other gag types. |
+| `/gag` | `target`, `type`, `intensity` | Apply or remove a gag and optionally save its speech intensity. |
 | `/hood` | `target`, `type` | Apply or remove deprivation, bondage, animal-themed and other hoods. |
 | `/straitjacket` | `target`, `type` | Change straitjacket straps and sleeve configurations. |
 | `/suits` | `target`, `type` | Apply or remove latex, plush, animal, drone, sack and other restraint suits. |
@@ -77,6 +78,42 @@ where the bot must remain unavailable. `/channelconfig list` shows that blacklis
 it. The NSFW status is checked dynamically, so changing it in Discord immediately updates the filter.
 `/channelconfig` and the safety command `/safeword` remain available outside NSFW channels so that
 configuration and safety actions cannot become unreachable.
+
+### Gag speech effect
+
+The effect is **off by default** for each server. An administrator can enable it with
+`/channelconfig gag-effect enabled:true` and disable it with `enabled:false`; `/channelconfig list`
+shows its current status. It only processes ordinary messages in unblocked NSFW text channels.
+
+`/gag target:@user type:Ball gag intensity:strong` sets both the gag and a saved intensity preference.
+Available preferences are `default`, `none`, `light`, `medium`, `strong` and `extreme`. When omitted,
+the existing preference is retained (new users default to `default`). Omitting `type` still selects
+Ball gag. Changing another user's preference follows the same consent rules as changing their gag,
+including approval in `ask` mode. Locked gags cannot be changed. The preference remains after removing
+the gag or using `/safeword`, and is shown in `/rdstatus`.
+
+With `default`, bit and ring gags use `light`; ball gag, wire muzzle and pacifier gag use `medium`;
+sock, panel and inflatable gags use `strong`; tape and leather muzzle use `extreme`. Reindeer muzzle
+is special: it replaces the text with a reindeer sound regardless of the saved preference, including
+`none`. Removing the gag stops the effect.
+Normal speech uses deterministic character substitutions: `light` softens a few consonants, while
+`medium`, `strong` and `extreme` progressively replace more letters. The transformer preserves
+case, message length, URLs, mentions, custom emoji and code blocks. It currently substitutes only
+ASCII letters, so text containing no transformable letters may remain unchanged.
+
+The bot posts a replacement with the author's display name and avatar using a bot-owned webhook, with
+mentions and link previews suppressed, then deletes the original only after Discord confirms publication.
+The author and message IDs are logged for moderation; message text is not logged or stored. Messages
+with attachments, embeds, replies, stickers, polls, components, voice messages or threads are not
+replaced. If publication or permissions fail, the original is retained; if deletion fails after
+publication, both messages may remain. To limit concurrent operations, a message arriving while another
+message in the same channel is being processed is left unchanged. The bot checks for edits before
+publication and deletion, but Discord does not offer an atomic replace operation.
+
+The operator must enable the privileged **Message Content Intent** in the Discord Developer Portal;
+Discord's verification requirements may apply to larger bots. In enabled channels, the bot requires
+View Channel, Read Message History, Send Messages, Manage Messages and Manage Webhooks. Do not enable the feature before
+informing members that their messages can be replaced.
 
 ### Donations
 

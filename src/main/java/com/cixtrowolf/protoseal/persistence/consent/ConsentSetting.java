@@ -1,5 +1,6 @@
 package com.cixtrowolf.protoseal.persistence.consent;
 
+import com.cixtrowolf.protoseal.model.restraint.GagIntensity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -37,6 +38,11 @@ public class ConsentSetting {
     @Column(name = "owner_user_id", length = 32)
     private String ownerUserId;
 
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
+    @Column(name = "gag_intensity", length = 16)
+    private GagIntensity gagIntensity;
+
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
@@ -61,5 +67,14 @@ public class ConsentSetting {
 
     public String getOwnerUserId() {
         return ownerUserId;
+    }
+
+    public GagIntensity getGagIntensity() {
+        return gagIntensity == null ? GagIntensity.DEFAULT : gagIntensity;
+    }
+
+    public void setGagIntensity(GagIntensity intensity) {
+        this.gagIntensity = intensity;
+        this.updatedAt = Instant.now();
     }
 }

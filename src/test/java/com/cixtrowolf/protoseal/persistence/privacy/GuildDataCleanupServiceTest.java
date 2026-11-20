@@ -2,6 +2,7 @@ package com.cixtrowolf.protoseal.persistence.privacy;
 
 import com.cixtrowolf.protoseal.persistence.channel.BlockedGuildChannelRepository;
 import com.cixtrowolf.protoseal.persistence.channel.GuildChannelRepository;
+import com.cixtrowolf.protoseal.persistence.channel.GuildSpeechSettingsRepository;
 import com.cixtrowolf.protoseal.persistence.consent.ConsentOwnerRequestRepository;
 import com.cixtrowolf.protoseal.persistence.consent.ConsentRestraintRequestRepository;
 import com.cixtrowolf.protoseal.persistence.consent.ConsentSettingRepository;
@@ -21,9 +22,10 @@ class GuildDataCleanupServiceTest {
         var restraintRequestRepository = mock(ConsentRestraintRequestRepository.class);
         var guildChannelRepository = mock(GuildChannelRepository.class);
         var blockedChannelRepository = mock(BlockedGuildChannelRepository.class);
+        var speechSettingsRepository = mock(GuildSpeechSettingsRepository.class);
         var service = new GuildDataCleanupService(restraintRepository, consentRepository,
                 ownerRequestRepository, restraintRequestRepository, guildChannelRepository,
-                blockedChannelRepository);
+                blockedChannelRepository, speechSettingsRepository);
 
         service.deleteForGuild("guild");
 
@@ -33,5 +35,6 @@ class GuildDataCleanupServiceTest {
         verify(restraintRequestRepository).deleteAllByGuildId("guild");
         verify(guildChannelRepository).deleteAllByGuildId("guild");
         verify(blockedChannelRepository).deleteAllByGuildId("guild");
+        verify(speechSettingsRepository).deleteById("guild");
     }
 }

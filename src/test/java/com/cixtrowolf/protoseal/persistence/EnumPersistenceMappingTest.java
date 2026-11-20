@@ -17,6 +17,8 @@ class EnumPersistenceMappingTest {
     void extensibleEnumsAreStoredAsVarcharColumns() {
         assertEquals("CHARACTER VARYING", columnType("RESTRAINT_STATES", "LOCK_TYPE"));
         assertEquals("CHARACTER VARYING", columnType("CONSENT_SETTINGS", "MODE"));
+        assertEquals("CHARACTER VARYING", columnType("CONSENT_SETTINGS", "GAG_INTENSITY"));
+        assertEquals("CHARACTER VARYING", columnType("CONSENT_RESTRAINT_REQUESTS", "GAG_INTENSITY"));
     }
 
     private String columnType(String table, String column) {

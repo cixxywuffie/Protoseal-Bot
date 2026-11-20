@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.cixtrowolf.protoseal.persistence.consent.ConsentService;
 import com.cixtrowolf.protoseal.model.restraint.RestraintZone;
 import com.cixtrowolf.protoseal.model.restraint.RestraintLockType;
+import com.cixtrowolf.protoseal.model.restraint.GagIntensity;
 
 import java.util.List;
 import java.time.Duration;
@@ -23,15 +24,30 @@ public class RestraintStateService {
 
     @Transactional
     public StateUpdateResult saveState(String guildId, String userId, RestraintZone zone, int level, String actorId, String name) {
+        return saveState(guildId, userId, zone, level, actorId, name, null);
+    }
+
+    @Transactional
+    public StateUpdateResult saveState(String guildId, String userId, RestraintZone zone, int level, String actorId,
+                                       String name, GagIntensity intensity) {
         if (!consentService.canManageRestraints(guildId, userId, actorId)) {
             return StateUpdateResult.CONSENT_DENIED;
         }
-        return saveStateApproved(guildId, userId, zone, level, actorId, name);
+        return saveStateApproved(guildId, userId, zone, level, actorId, name, intensity);
     }
 
     @Transactional
     public StateUpdateResult saveStateApproved(String guildId, String userId, RestraintZone zone, int level,
                                                String actorId, String name) {
+        return saveStateApproved(guildId, userId, zone, level, actorId, name, null);
+    }
+
+    @Transactional
+    public StateUpdateResult saveStateApproved(String guildId, String userId, RestraintZone zone, int level,
+                                               String actorId, String name, GagIntensity intensity) {
+        if (intensity != null && zone != RestraintZone.GAG) {
+            throw new IllegalArgumentException("Gag intensity requires the gag zone");
+        }
         var activeStates = repository
                 .findByGuildIdAndUserIdAndLevelGreaterThanOrderByZoneAsc(guildId, userId, 0);
         if (zone != RestraintZone.MITTS
@@ -61,6 +77,7 @@ public class RestraintStateService {
             }
             repository.save(state);
         }
+        if (intensity != null) consentService.setGagIntensity(guildId, userId, intensity);
         return StateUpdateResult.UPDATED;
     }
 

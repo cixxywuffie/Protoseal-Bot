@@ -2,6 +2,7 @@ package com.cixtrowolf.protoseal.persistence.privacy;
 
 import com.cixtrowolf.protoseal.persistence.channel.BlockedGuildChannelRepository;
 import com.cixtrowolf.protoseal.persistence.channel.GuildChannelRepository;
+import com.cixtrowolf.protoseal.persistence.channel.GuildSpeechSettingsRepository;
 import com.cixtrowolf.protoseal.persistence.consent.ConsentOwnerRequestRepository;
 import com.cixtrowolf.protoseal.persistence.consent.ConsentRestraintRequestRepository;
 import com.cixtrowolf.protoseal.persistence.consent.ConsentSettingRepository;
@@ -18,19 +19,22 @@ public class GuildDataCleanupService {
     private final ConsentRestraintRequestRepository restraintRequestRepository;
     private final GuildChannelRepository guildChannelRepository;
     private final BlockedGuildChannelRepository blockedGuildChannelRepository;
+    private final GuildSpeechSettingsRepository speechSettingsRepository;
 
     public GuildDataCleanupService(RestraintStateRepository restraintStateRepository,
                                    ConsentSettingRepository consentSettingRepository,
                                    ConsentOwnerRequestRepository ownerRequestRepository,
                                    ConsentRestraintRequestRepository restraintRequestRepository,
                                    GuildChannelRepository guildChannelRepository,
-                                   BlockedGuildChannelRepository blockedGuildChannelRepository) {
+                                   BlockedGuildChannelRepository blockedGuildChannelRepository,
+                                   GuildSpeechSettingsRepository speechSettingsRepository) {
         this.restraintStateRepository = restraintStateRepository;
         this.consentSettingRepository = consentSettingRepository;
         this.ownerRequestRepository = ownerRequestRepository;
         this.restraintRequestRepository = restraintRequestRepository;
         this.guildChannelRepository = guildChannelRepository;
         this.blockedGuildChannelRepository = blockedGuildChannelRepository;
+        this.speechSettingsRepository = speechSettingsRepository;
     }
 
     @Transactional
@@ -41,5 +45,6 @@ public class GuildDataCleanupService {
         consentSettingRepository.deleteAllByGuildId(guildId);
         guildChannelRepository.deleteAllByGuildId(guildId);
         blockedGuildChannelRepository.deleteAllByGuildId(guildId);
+        speechSettingsRepository.deleteById(guildId);
     }
 }

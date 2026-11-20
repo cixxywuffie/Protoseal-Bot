@@ -2,6 +2,7 @@ package com.cixtrowolf.protoseal.commands.channel;
 
 import com.cixtrowolf.protoseal.commands.SlashCommandInterface;
 import com.cixtrowolf.protoseal.persistence.channel.GuildChannelService;
+import com.cixtrowolf.protoseal.persistence.channel.GuildSpeechSettingsService;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
 import discord4j.core.object.command.ApplicationCommandInteractionOption;
@@ -16,10 +17,13 @@ import java.util.concurrent.Callable;
 public class ChannelConfigCommand implements SlashCommandInterface {
     private final GuildChannelService channelService;
     private final GatewayDiscordClient client;
+    private final GuildSpeechSettingsService speechSettings;
 
-    public ChannelConfigCommand(GuildChannelService channelService, GatewayDiscordClient client) {
+    public ChannelConfigCommand(GuildChannelService channelService, GatewayDiscordClient client,
+                                GuildSpeechSettingsService speechSettings) {
         this.channelService = channelService;
         this.client = client;
+        this.speechSettings = speechSettings;
     }
 
     @Override
@@ -40,16 +44,30 @@ public class ChannelConfigCommand implements SlashCommandInterface {
 
     private Mono<Void> execute(ChatInputInteractionEvent event, String guildId) {
         var option = event.getOptions().stream().findFirst();
-        if (option.isEmpty()) return event.reply("Choose `block`, `unblock`, `list`, or `clear`.")
+        if (option.isEmpty()) return event.reply("Choose `block`, `unblock`, `list`, `clear`, or `gag-effect`.")
                 .withEphemeral(true);
         String action = option.get().getName();
 
+        if ("gag-effect".equals(action)) {
+            var enabled = option.get().getOption("enabled")
+                    .flatMap(ApplicationCommandInteractionOption::getValue)
+                    .map(value -> value.asBoolean());
+            if (enabled.isEmpty()) return event.reply("Specify whether the gag effect is enabled.")
+                    .withEphemeral(true);
+            return Mono.fromRunnable(() -> speechSettings.setEnabled(guildId, enabled.get()))
+                    .subscribeOn(Schedulers.boundedElastic())
+                    .then(event.reply("Gag speech effect " + (enabled.get() ? "enabled" : "disabled")
+                            + " for this server. When enabled, eligible messages in NSFW channels may be replaced"
+                            + " by a webhook; the bot needs View Channel, Read Message History, Send Messages,"
+                            + " Manage Messages and Manage Webhooks.").withEphemeral(true));
+        }
         if ("list".equals(action)) {
-            return blocking(() -> channelService.listBlocked(guildId))
-                    .flatMap(blockedChannels -> {
-                String blacklist = blockedChannels.isEmpty() ? "None"
-                        : blockedChannels.stream().map(id -> "<#" + id + ">").reduce((a, b) -> a + "\n" + b).orElse("");
+            return blocking(() -> new ConfigStatus(channelService.listBlocked(guildId), speechSettings.isEnabled(guildId)))
+                    .flatMap(status -> {
+                String blacklist = status.blockedChannels().isEmpty() ? "None"
+                        : status.blockedChannels().stream().map(id -> "<#" + id + ">").reduce((a, b) -> a + "\n" + b).orElse("");
                 String message = "ProtoSeal is available only in NSFW text channels unless they are blacklisted.\n"
+                        + "Gag speech effect: **" + (status.enabled() ? "enabled" : "disabled") + "**.\n"
                         + "**Blacklist**\n" + blacklist;
                 return event.reply(message).withEphemeral(true);
             });
@@ -92,4 +110,6 @@ public class ChannelConfigCommand implements SlashCommandInterface {
     private <T> Mono<T> blocking(Callable<T> operation) {
         return Mono.fromCallable(operation).subscribeOn(Schedulers.boundedElastic());
     }
+
+    private record ConfigStatus(java.util.List<String> blockedChannels, boolean enabled) {}
 }

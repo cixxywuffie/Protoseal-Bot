@@ -11,6 +11,9 @@
       { "name": "channel", "description": "Channel to remove from the blacklist.", "type": 7, "required": true }
     ]},
     { "name": "list", "description": "Lists channels where ProtoSeal is blocked.", "type": 1 },
-    { "name": "clear", "description": "Clears the blacklist; NSFW text channels remain allowed.", "type": 1 }
+    { "name": "clear", "description": "Clears the blacklist; NSFW text channels remain allowed.", "type": 1 },
+    { "name": "gag-effect", "description": "Enable or disable the gag speech effect for this server.", "type": 1, "options": [
+      { "name": "enabled", "description": "Whether gagged speech is replaced by a webhook.", "type": 5, "required": true }
+    ]}
   ]
 }
