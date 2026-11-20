@@ -2,6 +2,7 @@ package com.cixtrowolf.protoseal.persistence.consent;
 
 import com.cixtrowolf.protoseal.model.restraint.RestraintZone;
 import com.cixtrowolf.protoseal.model.restraint.RestraintLockType;
+import com.cixtrowolf.protoseal.model.restraint.GagIntensity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -42,6 +43,10 @@ public class ConsentRestraintRequest {
     private int level;
     @Column(length = 128)
     private String name;
+    @Enumerated(EnumType.STRING)
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.VARCHAR)
+    @Column(name = "gag_intensity", length = 16)
+    private GagIntensity gagIntensity;
     @Enumerated(EnumType.STRING)
     @Column(name = "lock_type", length = 16)
     private RestraintLockType lockType;
@@ -90,6 +95,8 @@ public class ConsentRestraintRequest {
     public RestraintZone getZone() { return zone; }
     public int getLevel() { return level; }
     public String getName() { return name; }
+    public GagIntensity getGagIntensity() { return gagIntensity; }
+    public void setGagIntensity(GagIntensity intensity) { this.gagIntensity = intensity; }
     public RestraintLockType getLockType() { return lockType; }
     public Long getDurationMinutes() { return durationMinutes; }
     public Instant getExpiresAt() { return expiresAt; }

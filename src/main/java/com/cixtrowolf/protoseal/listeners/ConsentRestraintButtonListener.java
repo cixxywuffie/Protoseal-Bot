@@ -69,7 +69,7 @@ public class ConsentRestraintButtonListener {
                                      com.cixtrowolf.protoseal.persistence.consent.ConsentRestraintRequest request) {
         return Mono.fromCallable(() -> restraintStateService.saveStateApproved(
                         request.getGuildId(), request.getTargetUserId(), request.getZone(), request.getLevel(),
-                        request.getActorUserId(), request.getName()))
+                        request.getActorUserId(), request.getName(), request.getGagIntensity()))
                 .subscribeOn(Schedulers.boundedElastic())
                 .flatMap(result -> {
                     String message = switch (result) {

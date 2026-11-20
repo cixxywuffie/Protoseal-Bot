@@ -1,5 +1,7 @@
 package com.cixtrowolf.protoseal.persistence.consent;
 
+import com.cixtrowolf.protoseal.model.restraint.GagIntensity;
+import com.cixtrowolf.protoseal.model.restraint.RestraintZone;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -99,6 +101,25 @@ class ConsentServiceTest {
         assertEquals(ConsentService.RestraintRequestResult.ACCEPTED, response.result());
         assertEquals(request, response.request());
         verify(restraintRequestRepository).delete(request);
+    }
+
+    @Test
+    void askRequestPersistsTheRequestedIntensity() {
+        consentService.createRestraintRequest("guild", "target", "actor", "channel",
+                RestraintZone.GAG, 1, "ball gag", GagIntensity.STRONG);
+        var captor = org.mockito.ArgumentCaptor.forClass(ConsentRestraintRequest.class);
+        verify(restraintRequestRepository).save(captor.capture());
+        assertEquals(GagIntensity.STRONG, captor.getValue().getGagIntensity());
+    }
+
+    @Test
+    void consentResetDoesNotEraseGagIntensity() {
+        var setting = new ConsentSetting("guild", "target", ConsentMode.ASK, null);
+        setting.setGagIntensity(GagIntensity.LIGHT);
+        when(settingRepository.findByGuildIdAndUserId("guild", "target")).thenReturn(Optional.of(setting));
+        consentService.resetConsent("guild", "target");
+        assertEquals(GagIntensity.LIGHT, consentService.getGagIntensity("guild", "target"));
+        assertEquals(ConsentMode.SELF_ONLY, setting.getMode());
     }
 
     @Test

@@ -1,5 +1,6 @@
 package com.cixtrowolf.protoseal.persistence.consent;
 
+import com.cixtrowolf.protoseal.model.restraint.GagIntensity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,6 +42,19 @@ public class ConsentService {
         return repository.findByGuildIdAndUserId(guildId, userId)
                 .map(setting -> new ConsentStatus(setting.getMode(), setting.getOwnerUserId()))
                 .orElseGet(() -> new ConsentStatus(ConsentMode.SELF_ONLY, null));
+    }
+
+    @Transactional(readOnly = true)
+    public GagIntensity getGagIntensity(String guildId, String userId) {
+        return repository.findByGuildIdAndUserId(guildId, userId)
+                .map(ConsentSetting::getGagIntensity).orElse(GagIntensity.DEFAULT);
+    }
+
+    @Transactional
+    public void setGagIntensity(String guildId, String userId, GagIntensity intensity) {
+        var setting = repository.findByGuildIdAndUserId(guildId, userId)
+                .orElseGet(() -> repository.save(new ConsentSetting(guildId, userId, ConsentMode.SELF_ONLY, null)));
+        setting.setGagIntensity(intensity);
     }
 
     @Transactional
@@ -87,9 +101,18 @@ public class ConsentService {
     public String createRestraintRequest(String guildId, String targetUserId, String actorUserId, String channelId,
                                          com.cixtrowolf.protoseal.model.restraint.RestraintZone zone,
                                          int level, String name) {
+        return createRestraintRequest(guildId, targetUserId, actorUserId, channelId, zone, level, name, null);
+    }
+
+    @Transactional
+    public String createRestraintRequest(String guildId, String targetUserId, String actorUserId, String channelId,
+                                         com.cixtrowolf.protoseal.model.restraint.RestraintZone zone,
+                                         int level, String name, GagIntensity intensity) {
         String token = UUID.randomUUID().toString();
-        restraintRequestRepository.save(new ConsentRestraintRequest(token, guildId, targetUserId, actorUserId, channelId,
-                zone, level, name, Instant.now().plus(Duration.ofMinutes(5))));
+        var request = new ConsentRestraintRequest(token, guildId, targetUserId, actorUserId, channelId,
+                zone, level, name, Instant.now().plus(Duration.ofMinutes(5)));
+        request.setGagIntensity(intensity);
+        restraintRequestRepository.save(request);
         return token;
     }
 
