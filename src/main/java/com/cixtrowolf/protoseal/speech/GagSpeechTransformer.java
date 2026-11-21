@@ -9,6 +9,11 @@ import java.util.regex.Pattern;
 public class GagSpeechTransformer {
     private static final Pattern PROTECTED = Pattern.compile(
             "```[\\s\\S]*?```|`[^`\\r\\n]*`|https?://[^\\s<>]+|<[^>\\r\\n]+>|@everyone|@here");
+    private static final Pattern LETTERS = Pattern.compile("[a-zA-Z]");
+    private static final String LIGHT_MAPPING =  "abcdefghijkhnnopqhnfuvwxyn";
+    private static final String MEDIUM_MAPPING = "afhfefghimmhnnoffhnfunmfnn";
+    private static final String STRONG_MAPPING = "mfhfefghimmhnnmffnnfunmfnn";
+    private static final String EXTREME_MAPPING = "mfhfmfghnmmhnnmffnnfmnmfnn";
 
     public String transform(String text, GagIntensity intensity) {
         if (intensity == GagIntensity.NONE) return text;
@@ -33,62 +38,19 @@ public class GagSpeechTransformer {
     private String applyGag(String segment, GagIntensity intensity) {
         if (segment.isEmpty()) return segment;
         return switch (intensity) {
-            case LIGHT -> applyLight(segment);
-            case MEDIUM -> applyMedium(segment);
-            case STRONG -> applyStrong(segment);
-            case EXTREME -> applyExtreme(segment);
+            case LIGHT -> applyMapping(segment, LIGHT_MAPPING);
+            case MEDIUM -> applyMapping(segment, MEDIUM_MAPPING);
+            case STRONG -> applyMapping(segment, STRONG_MAPPING);
+            case EXTREME -> applyMapping(segment, EXTREME_MAPPING);
             default -> segment;
         };
     }
 
-    private String applyLight(String text) {
-        return text.replaceAll("l", "w")
-                .replaceAll("r", "w")
-                .replaceAll("L", "W")
-                .replaceAll("R", "W")
-                .replaceAll("s", "f")
-                .replaceAll("S", "F")
-                .replaceAll("t", "g")
-                .replaceAll("T", "G");
-    }
-
-    private String applyMedium(String text) {
-        return text.replaceAll("[lr]", "w")
-                .replaceAll("[LR]", "W")
-                .replaceAll("[bp]", "m")
-                .replaceAll("[BP]", "M")
-                .replaceAll("[dt]", "n")
-                .replaceAll("[DT]", "N")
-                .replaceAll("[fsvz]", "h")
-                .replaceAll("[FSVZ]", "H");
-    }
-
-    private String applyStrong(String text) {
-        return text.replaceAll("[abjsvz]", "r")
-                .replaceAll("[ABJSVZ]", "R")
-                .replaceAll("[dklv]", "f")
-                .replaceAll("[DKLV]", "F")
-                .replaceAll("[gx]", "n")
-                .replaceAll("[GX]", "N")
-                .replaceAll("[himu]", "d")
-                .replaceAll("[HIMU]", "D")
-                .replaceAll("q", "m")
-                .replaceAll("Q", "M");
-    }
-
-    private String applyExtreme(String text) {
-        return text.replaceAll("[BDKTV]", "Mph")
-                .replaceAll("[bdktv]", "m")
-                .replaceAll("[DJLQR]", "M")
-                .replaceAll("[djlqr]", "ph")
-                .replaceAll("[AEIOU]", "Mph")
-                .replaceAll("[aeiou]", "m")
-                .replaceAll("[CVNY]", "Mh")
-                .replaceAll("[cvny]", "ph")
-                .replaceAll("[WZX]", "Mf")
-                .replaceAll("[wzx]", "f")
-                .replaceAll("S", "h")
-                .replaceAll("s", "m");
+    private String applyMapping(String text, String mapping) {
+        return LETTERS.matcher(text).replaceAll(mr -> {
+            char c = mr.group().charAt(0);
+            char mapped = mapping.charAt(Character.toLowerCase(c) - 'a');
+            return String.valueOf(Character.isUpperCase(c) ? Character.toUpperCase(mapped) : mapped);
+        });
     }
 }
-
