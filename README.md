@@ -96,8 +96,10 @@ With `default`, bit and ring gags use `light`; ball gag, wire muzzle and pacifie
 sock, panel and inflatable gags use `strong`; tape and leather muzzle use `extreme`. Reindeer muzzle
 is special: it replaces the text with a reindeer sound regardless of the saved preference, including
 `none`. Removing the gag stops the effect.
-Normal speech uses deterministic character substitutions: `light` softens a few consonants, while
-`medium`, `strong` and `extreme` progressively replace more letters. The transformer preserves
+Normal speech uses deterministic character substitutions: `light` maps `l`, `r`, `s` and `z` to `n`
+and `t` to `f`; `medium` applies the stronger mapping to consonants while retaining vowels.
+`strong` also substitutes `a` and `o`, while `extreme` substitutes all vowels. These are stylized
+letter substitutions, not phonetic transcription. The transformer preserves
 case, message length, URLs, mentions, custom emoji and code blocks. It currently substitutes only
 ASCII letters, so text containing no transformable letters may remain unchanged.
 

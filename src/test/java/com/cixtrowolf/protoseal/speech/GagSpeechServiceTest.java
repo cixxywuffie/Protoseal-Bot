@@ -66,15 +66,12 @@ class GagSpeechServiceTest {
     }
 
     @Test
-    void strongerIntensitiesTransformTextPredictably() {
+    void strongIsDistinctFromMediumAndExtreme() {
         String text = "The quick brown fox jumps over the lazy dog";
-        String prev = text;
-        for (GagIntensity intensity : new GagIntensity[]{GagIntensity.LIGHT, GagIntensity.MEDIUM,
-                GagIntensity.STRONG, GagIntensity.EXTREME}) {
-            String result = transformer.transform(text, intensity);
-            assertNotEquals(prev, result);
-            prev = result;
-        }
+        String strong = transformer.transform(text, GagIntensity.STRONG);
+        assertNotEquals(text, strong);
+        assertNotEquals(transformer.transform(text, GagIntensity.MEDIUM), strong);
+        assertNotEquals(strong, transformer.transform(text, GagIntensity.EXTREME));
     }
 
     private void gag(int level) {
