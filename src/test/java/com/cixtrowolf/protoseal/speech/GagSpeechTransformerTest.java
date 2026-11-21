@@ -14,31 +14,40 @@ class GagSpeechTransformerTest {
     private final GagSpeechTransformer transformer = new GagSpeechTransformer();
 
     @Test
-    void eachIntensityUsesItsOwnFixedCharacterMapping() {
+    void intensitiesUseTheirFixedCharacterMappings() {
         String alphabet = "abcdefghijklmnopqrstuvwxyz";
         Map<GagIntensity, String> expected = Map.of(
-                GagIntensity.LIGHT, "abcdefghijkwmnopqwfguvwxyz",
-                GagIntensity.MEDIUM, "amcnehghijkwmnomqwhnuhwxyh",
-                GagIntensity.STRONG, "rrcfefnddrffdnopmrrtdrwnyr",
-                GagIntensity.EXTREME, "mmphmmfghmphmphmphmpphphmmmmffphf");
+                GagIntensity.LIGHT, "abcdefghijkhnnopqhnfuvwxyn",
+                GagIntensity.MEDIUM, "afhfefghimmhnnoffhnfunmfnn",
+                GagIntensity.STRONG, "mfhfefghimmhnnmffnnfunmfnn",
+                GagIntensity.EXTREME, "mfhfmfghnmmhnnmffnnfmnmfnn");
         expected.forEach((intensity, output) -> {
             assertEquals(output, transformer.transform(alphabet, intensity), intensity.name());
         });
-        assertEquals("ABCDEFGHIJKWMNOPQWFGUVWXYZ", transformer.transform(alphabet.toUpperCase(Locale.ROOT), GagIntensity.LIGHT));
-        assertEquals("AMCNEHGHIJKWMNOMQWHNUHWXYH", transformer.transform(alphabet.toUpperCase(Locale.ROOT), GagIntensity.MEDIUM));
-        assertEquals("RRCFEFNDDRFFDNOPMRRTDRWNYR", transformer.transform(alphabet.toUpperCase(Locale.ROOT), GagIntensity.STRONG));
-        assertEquals("MphMphMhMphMphFGHMphMMphMMMhMphPMMhMphMphMphMfMfMhMf", transformer.transform(alphabet.toUpperCase(Locale.ROOT), GagIntensity.EXTREME));
+        assertEquals("ABCDEFGHIJKHNNOPQHNFUVWXYN", transformer.transform(alphabet.toUpperCase(Locale.ROOT), GagIntensity.LIGHT));
+        assertEquals("AFHFEFGHIMMHNNOFFHNFUNMFNN", transformer.transform(alphabet.toUpperCase(Locale.ROOT), GagIntensity.MEDIUM));
+        assertEquals("MFHFEFGHIMMHNNMFFNNFUNMFNN", transformer.transform(alphabet.toUpperCase(Locale.ROOT), GagIntensity.STRONG));
+        assertEquals("MFHFMFGHNMMHNNMFFNNFMNMFNN", transformer.transform(alphabet.toUpperCase(Locale.ROOT), GagIntensity.EXTREME));
     }
 
     @Test
     void eachIntensityHasPredictableReadableFixtures() {
         String text = "Hello world!";
         assertEquals(text, transformer.transform(text, GagIntensity.NONE));
-        assertEquals("Hewwo wowwd!", transformer.transform(text, GagIntensity.LIGHT));
-        assertEquals("Hewwo wowwn!", transformer.transform(text, GagIntensity.MEDIUM));
-        assertEquals("Deffo worff!", transformer.transform(text, GagIntensity.STRONG));
-        assertEquals("Hmphphm fmphphm!", transformer.transform(text, GagIntensity.EXTREME));
+        assertEquals("Hehho wohhd!", transformer.transform(text, GagIntensity.LIGHT));
+        assertEquals("Hehho mohhf!", transformer.transform(text, GagIntensity.MEDIUM));
+        assertEquals("Hehhm mmnhf!", transformer.transform(text, GagIntensity.STRONG));
+        assertEquals("Hmhhm mmnhf!", transformer.transform(text, GagIntensity.EXTREME));
         assertThrows(IllegalArgumentException.class, () -> transformer.transform(text, GagIntensity.DEFAULT));
+    }
+
+    @Test
+    void strongAndExtremePreserveCaseAndDoNotCascadeReplacements() {
+        for (var intensity : new GagIntensity[]{GagIntensity.STRONG, GagIntensity.EXTREME}) {
+            assertEquals("MmMm FfNn!", transformer.transform("AaWw BbZz!", intensity));
+            assertEquals(intensity == GagIntensity.STRONG ? "hmhm nunfm" : "hmhm nmnfm",
+                    transformer.transform("hola mundo", intensity));
+        }
     }
 
     @Test
