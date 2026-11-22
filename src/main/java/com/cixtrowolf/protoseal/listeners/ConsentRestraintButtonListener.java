@@ -62,7 +62,23 @@ public class ConsentRestraintButtonListener {
             case RESTRAINT -> applyAcceptedRestraint(event, request);
             case LOCK -> applyAcceptedLock(event, request);
             case TIMELOCK -> applyAcceptedTimelock(event, request);
+            case GAG_INTENSITY -> applyAcceptedGagIntensity(event, request);
         };
+    }
+
+    private Mono<Void> applyAcceptedGagIntensity(ButtonInteractionEvent event,
+            com.cixtrowolf.protoseal.persistence.consent.ConsentRestraintRequest request) {
+        return Mono.fromCallable(() -> restraintStateService.updateGagIntensityApproved(
+                        request.getGuildId(), request.getTargetUserId(), request.getGagIntensity()))
+                .subscribeOn(Schedulers.boundedElastic())
+                .flatMap(result -> {
+                    Mono<Void> editRequest = event.edit(result
+                            == RestraintStateService.GagIntensityUpdateResult.UPDATED
+                            ? "Request accepted. Gag intensity was updated without changing the gag type."
+                            : "The gag intensity request could not be applied.").withComponents();
+                    if (result != RestraintStateService.GagIntensityUpdateResult.UPDATED) return editRequest;
+                    return editRequest.then(postAcceptedAction(request));
+                });
     }
 
     private Mono<Void> applyAcceptedRestraint(ButtonInteractionEvent event,
@@ -142,6 +158,13 @@ public class ConsentRestraintButtonListener {
     }
 
     private String acceptedMessage(com.cixtrowolf.protoseal.persistence.consent.ConsentRestraintRequest request) {
+        if (request.getRequestType()
+                == com.cixtrowolf.protoseal.persistence.consent.ConsentRestraintRequest.RequestType.GAG_INTENSITY) {
+            return "<@" + request.getActorUserId() + "> changed <@" + request.getTargetUserId()
+                    + ">'s gag intensity to **"
+                    + request.getGagIntensity().name().toLowerCase(java.util.Locale.ROOT)
+                    + "** without changing the gag type.";
+        }
         if (request.getRequestType() == com.cixtrowolf.protoseal.persistence.consent.ConsentRestraintRequest.RequestType.LOCK) {
             if (request.getLockType() == null) {
                 return "<@" + request.getActorUserId() + "> removed the locks from all of <@"

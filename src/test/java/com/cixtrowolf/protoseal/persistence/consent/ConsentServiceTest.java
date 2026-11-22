@@ -113,6 +113,19 @@ class ConsentServiceTest {
     }
 
     @Test
+    void intensityOnlyApprovalRequestDoesNotContainARestraintChange() {
+        consentService.createGagIntensityRequest("guild", "target", "actor", "channel", GagIntensity.STRONG);
+        var captor = org.mockito.ArgumentCaptor.forClass(ConsentRestraintRequest.class);
+        verify(restraintRequestRepository).save(captor.capture());
+
+        var request = captor.getValue();
+        assertEquals(ConsentRestraintRequest.RequestType.GAG_INTENSITY, request.getRequestType());
+        assertEquals(GagIntensity.STRONG, request.getGagIntensity());
+        assertEquals(null, request.getZone());
+        assertEquals(null, request.getName());
+    }
+
+    @Test
     void consentResetDoesNotEraseGagIntensity() {
         var setting = new ConsentSetting("guild", "target", ConsentMode.ASK, null);
         setting.setGagIntensity(GagIntensity.LIGHT);

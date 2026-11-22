@@ -117,6 +117,18 @@ public class ConsentService {
     }
 
     @Transactional
+    public String createGagIntensityRequest(String guildId, String targetUserId, String actorUserId, String channelId,
+                                            GagIntensity intensity) {
+        String token = UUID.randomUUID().toString();
+        var request = new ConsentRestraintRequest(token, guildId, targetUserId, actorUserId, channelId,
+                ConsentRestraintRequest.RequestType.GAG_INTENSITY, null, null,
+                Instant.now().plus(Duration.ofMinutes(5)));
+        request.setGagIntensity(intensity);
+        restraintRequestRepository.save(request);
+        return token;
+    }
+
+    @Transactional
     public void cancelRestraintRequest(String token) {
         restraintRequestRepository.findByToken(token).ifPresent(restraintRequestRepository::delete);
     }
