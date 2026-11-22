@@ -51,6 +51,7 @@ public class RestraintCommand implements SlashCommandInterface {
                 .flatMap(ApplicationCommandInteractionOption::getValue)
                 .map(value -> Math.toIntExact(value.asLong()))
                 .orElse(1);
+        boolean typeProvided = event.getOption("type").isPresent();
         if (level < 0 || level > definition.get().getMaximumLevel()) {
             LOGGER.warn("Rejected restraint command={} actorId={} invalidLevel={}",
                     event.getCommandName(), event.getInteraction().getUser().getId(), level);
@@ -83,13 +84,18 @@ public class RestraintCommand implements SlashCommandInterface {
                 .flatMap(ApplicationCommandInteractionOption::getValue)
                 .map(value -> value.asUser())
                 .map(target -> target.flatMap(user -> updateRestraint(
-                        event, definition.get(), guildId.get().asString(), user, level, selectedIntensity)))
+                        event, definition.get(), guildId.get().asString(), user, level, selectedIntensity,
+                        !typeProvided && selectedIntensity != null)))
                 .orElseGet(() -> event.reply("You must specify a target user.").withEphemeral(true));
     }
 
     private Mono<Void> updateRestraint(ChatInputInteractionEvent event, RestraintDefinition definition,
-                                       String guildId, User target, int level, GagIntensity intensity) {
+                                       String guildId, User target, int level, GagIntensity intensity,
+                                       boolean intensityOnly) {
         var actor = event.getInteraction().getUser();
+        if (intensityOnly) {
+            return updateGagIntensity(event, guildId, target, intensity);
+        }
         boolean selfTarget = target.getId().equals(actor.getId());
         RestraintLevel selectedLevel = definition.getLevel(level);
         String response = selfTarget ? selectedLevel.selfMessage() : selectedLevel.message();
@@ -153,5 +159,50 @@ public class RestraintCommand implements SlashCommandInterface {
                         "Failed restraint command={} guildId={} actorId={} targetId={} zone={} level={}",
                         event.getCommandName(), guildId, actor.getId(), target.getId(),
                         definition.getZone(), level, error));
+    }
+
+    private Mono<Void> updateGagIntensity(ChatInputInteractionEvent event, String guildId, User target,
+                                          GagIntensity intensity) {
+        var actor = event.getInteraction().getUser();
+        String targetId = target.getId().asString();
+        String actorId = actor.getId().asString();
+        String intensityName = intensity.name().toLowerCase(java.util.Locale.ROOT);
+
+        if (consentService.requiresRestraintApproval(guildId, targetId, actorId)) {
+            return event.deferReply().withEphemeral(true).then(
+                    Mono.fromCallable(() -> consentService.createGagIntensityRequest(
+                                    guildId, targetId, actorId,
+                                    event.getInteraction().getChannelId().asString(), intensity))
+                            .subscribeOn(Schedulers.boundedElastic())
+                            .flatMap(token -> target.getPrivateChannel()
+                                    .flatMap(channel -> channel.createMessage()
+                                            .withContent(actor.getMention() + " asks to change your **gag intensity**"
+                                                    + " to **" + intensityName + "** in your shared server, without"
+                                                    + " changing your gag type. This request expires in 5 minutes.")
+                                            .withComponents(ActionRow.of(
+                                                    Button.success("consent-restraint:accept:" + token, "Accept"),
+                                                    Button.danger("consent-restraint:reject:" + token, "Reject"))))
+                                    .then(event.editReply("Approval request sent privately to "
+                                            + target.getMention() + ".").then())
+                                    .onErrorResume(error -> Mono.fromRunnable(
+                                                    () -> consentService.cancelRestraintRequest(token))
+                                            .subscribeOn(Schedulers.boundedElastic())
+                                            .then(event.editReply("I could not send that user a DM. "
+                                                    + "The intensity request was cancelled.").then()))));
+        }
+
+        return Mono.fromCallable(() -> restraintStateService.updateGagIntensity(
+                        guildId, targetId, actorId, intensity))
+                .subscribeOn(Schedulers.boundedElastic())
+                .flatMap(result -> switch (result) {
+                    case UPDATED -> event.reply("Updated gag intensity to **" + intensityName
+                            + "** without changing the gag type.");
+                    case CONSENT_DENIED -> event.reply(
+                                    "That user's consent settings do not allow you to manage their restraints.")
+                            .withEphemeral(true);
+                })
+                .doOnError(error -> LOGGER.error(
+                        "Failed gag intensity update guildId={} actorId={} targetId={}",
+                        guildId, actorId, targetId, error));
     }
 }

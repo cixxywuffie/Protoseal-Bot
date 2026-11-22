@@ -19,7 +19,7 @@ import java.time.Instant;
 @Table(name = "consent_restraint_requests", uniqueConstraints =
         @UniqueConstraint(name = "uk_consent_restraint_request_token", columnNames = "token"))
 public class ConsentRestraintRequest {
-    public enum RequestType { RESTRAINT, LOCK, TIMELOCK }
+    public enum RequestType { RESTRAINT, LOCK, TIMELOCK, GAG_INTENSITY }
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
