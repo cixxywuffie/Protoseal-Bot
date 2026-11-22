@@ -14,7 +14,7 @@
 	<description>Consent-focused Discord restraint roleplay bot</description>
 	<properties>
 		<java.version>21</java.version>
-		<discord4j_version>3.3.0</discord4j_version>
+		<discord4j_version>3.3.3</discord4j_version>
 	</properties>
 	<dependencies>
 		<dependency>
