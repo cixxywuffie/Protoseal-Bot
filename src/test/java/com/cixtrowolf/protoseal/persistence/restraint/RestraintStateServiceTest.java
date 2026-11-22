@@ -66,6 +66,28 @@ class RestraintStateServiceTest {
     }
 
     @Test
+    void intensityOnlyUpdateDoesNotReadOrChangeRestraintState() {
+        allowConsent();
+
+        assertEquals(RestraintStateService.GagIntensityUpdateResult.UPDATED,
+                service.updateGagIntensity("guild", "target", "actor", GagIntensity.STRONG));
+
+        verify(consentService).setGagIntensity("guild", "target", GagIntensity.STRONG);
+        verify(repository, never()).findByGuildIdAndUserIdAndZone(any(), any(), any());
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void deniedConsentPreventsIntensityOnlyUpdate() {
+        when(consentService.canManageRestraints("guild", "target", "actor")).thenReturn(false);
+
+        assertEquals(RestraintStateService.GagIntensityUpdateResult.CONSENT_DENIED,
+                service.updateGagIntensity("guild", "target", "actor", GagIntensity.STRONG));
+
+        verify(consentService, never()).setGagIntensity(any(), any(), any());
+    }
+
+    @Test
     void acceptedAskRequestBypassesOnlyTheConsentCheck() {
         when(repository.findByGuildIdAndUserIdAndLevelGreaterThanOrderByZoneAsc("guild", "target", 0))
                 .thenReturn(List.of());

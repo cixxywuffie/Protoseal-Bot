@@ -81,6 +81,22 @@ public class RestraintStateService {
         return StateUpdateResult.UPDATED;
     }
 
+    @Transactional
+    public GagIntensityUpdateResult updateGagIntensity(String guildId, String userId, String actorId,
+                                                       GagIntensity intensity) {
+        if (!consentService.canManageRestraints(guildId, userId, actorId)) {
+            return GagIntensityUpdateResult.CONSENT_DENIED;
+        }
+        return updateGagIntensityApproved(guildId, userId, intensity);
+    }
+
+    @Transactional
+    public GagIntensityUpdateResult updateGagIntensityApproved(String guildId, String userId,
+                                                               GagIntensity intensity) {
+        consentService.setGagIntensity(guildId, userId, intensity);
+        return GagIntensityUpdateResult.UPDATED;
+    }
+
     private void inheritLock(RestraintState state, RestraintState source) {
         if (source.getLockType() == RestraintLockType.TIMELOCK) {
             state.applyTimelock(source.getLockedByUserId(), source.getLockExpiresAt());
@@ -174,6 +190,11 @@ public class RestraintStateService {
         UPDATED,
         LOCKED,
         MITTS_ACTIVE,
+        CONSENT_DENIED
+    }
+
+    public enum GagIntensityUpdateResult {
+        UPDATED,
         CONSENT_DENIED
     }
 
