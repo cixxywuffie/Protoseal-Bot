@@ -68,6 +68,7 @@ class GagSpeechListenerTest {
 
     private void enablePipeline() {
         when(settings.isEnabled("1")).thenReturn(true);
+        when(speech.hasActiveEffect("1", "3")).thenReturn(true);
         when(speech.transform("1", "3", "Hello there")).thenReturn(Optional.of("Mmmh"));
         when(message.getChannel()).thenReturn(Mono.just(channel));
         when(channel.isNsfw()).thenReturn(true);
@@ -119,9 +120,35 @@ class GagSpeechListenerTest {
     @Test
     void aSafewordBeforePublicationPreventsReplacement() {
         enablePipeline();
-        when(speech.transform("1", "3", "Hello there"))
-                .thenReturn(Optional.of("Mmmh"), Optional.empty());
+        when(speech.transform("1", "3", "Hello there")).thenReturn(Optional.empty());
         listener.handle(event).block(Duration.ofSeconds(5));
+        verifyNoInteractions(webhooks);
+        verify(message, never()).delete();
+    }
+
+    @Test
+    void transformsOnlyOnceBeforePublication() {
+        enablePipeline();
+        when(speech.transform("1", "3", "Hello there"))
+                .thenReturn(Optional.of("Mmmh"), Optional.of("Different"));
+        var replacement = mock(Message.class);
+        when(replacement.getId()).thenReturn(Snowflake.of(6));
+        when(webhooks.publish(channel, botId, member, "Mmmh")).thenReturn(Mono.just(replacement));
+        when(message.delete()).thenReturn(Mono.empty());
+
+        listener.handle(event).block(Duration.ofSeconds(5));
+
+        verify(speech, times(1)).transform("1", "3", "Hello there");
+        verify(webhooks).publish(channel, botId, member, "Mmmh");
+        verify(message).delete();
+    }
+
+    @Test
+    void disabledBeforePublicationPreventsReplacement() {
+        enablePipeline();
+        when(settings.isEnabled("1")).thenReturn(true, false);
+        listener.handle(event).block(Duration.ofSeconds(5));
+        verify(speech, never()).transform(anyString(), anyString(), anyString());
         verifyNoInteractions(webhooks);
         verify(message, never()).delete();
     }
@@ -146,6 +173,15 @@ class GagSpeechListenerTest {
         listener.handle(event).block(Duration.ofSeconds(5));
         verifyNoInteractions(webhooks);
         verify(message, never()).delete();
+    }
+
+    @Test
+    void noActiveEffectSkipsChannelProcessing() {
+        when(settings.isEnabled("1")).thenReturn(true);
+        listener.handle(event).block(Duration.ofSeconds(5));
+        verify(message, never()).getChannel();
+        verify(speech, never()).transform(anyString(), anyString(), anyString());
+        verifyNoInteractions(webhooks);
     }
 
     @Test

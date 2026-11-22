@@ -24,6 +24,15 @@ public class GagSpeechService {
     }
 
     @Transactional(readOnly = true)
+    public boolean hasActiveEffect(String guildId, String userId) {
+        var state = restraints.findByGuildIdAndUserIdAndZone(guildId, userId, RestraintZone.GAG);
+        if (state.isEmpty() || state.get().getLevel() <= 0) return false;
+        int level = state.get().getLevel();
+        return level == RestraintDefinition.REINDEER_MUZZLE_LEVEL
+                || consent.getGagIntensity(guildId, userId).resolve(level) != GagIntensity.NONE;
+    }
+
+    @Transactional(readOnly = true)
     public Optional<String> transform(String guildId, String userId, String content) {
         var state = restraints.findByGuildIdAndUserIdAndZone(guildId, userId, RestraintZone.GAG);
         if (state.isEmpty() || state.get().getLevel() <= 0) return Optional.empty();

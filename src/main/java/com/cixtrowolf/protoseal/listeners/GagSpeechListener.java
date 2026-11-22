@@ -67,10 +67,10 @@ public class GagSpeechListener {
         String messageId = message.getId().asString();
 
         return Mono.fromCallable(() -> settings.isEnabled(guildId) && !channels.isBlocked(guildId, channelId)
-                        ? speech.transform(guildId, userId, message.getContent())
-                        : java.util.Optional.<String>empty())
+                        && speech.hasActiveEffect(guildId, userId))
                 .subscribeOn(Schedulers.boundedElastic())
-                .flatMap(transformed -> transformed.map(content -> Mono.defer(() -> {
+                .filter(Boolean::booleanValue)
+                .flatMap(eligible -> Mono.defer(() -> {
                     if (!acquire(messageId, channelId)) return Mono.<Void>empty();
                     return message.getChannel()
                         .ofType(TextChannel.class)
@@ -87,13 +87,13 @@ public class GagSpeechListener {
                                     }
                                     return Mono.fromCallable(() -> settings.isEnabled(guildId)
                                                     && !channels.isBlocked(guildId, channelId)
-                                                    && speech.transform(guildId, userId, message.getContent())
-                                                    .filter(content::equals).isPresent())
+                                                    ? speech.transform(guildId, userId, message.getContent())
+                                                    : java.util.Optional.<String>empty())
                                             .subscribeOn(Schedulers.boundedElastic())
-                                            .filter(Boolean::booleanValue)
-                                            .flatMap(ignored -> channel.getMessageById(message.getId(), EntityRetrievalStrategy.REST))
+                                            .flatMap(transformed -> Mono.justOrEmpty(transformed))
+                                            .flatMap(content -> channel.getMessageById(message.getId(), EntityRetrievalStrategy.REST)
                                             .filter(current -> unchanged(message, current))
-                                            .flatMap(ignored -> webhooks.publish(channel, client.getSelfId(), event.getMember().get(), content))
+                                            .flatMap(ignored -> webhooks.publish(channel, client.getSelfId(), event.getMember().get(), content)))
                                             .flatMap(replacement -> {
                                                 LOGGER.info("Gag speech proxied guildId={} channelId={} authorId={} originalId={} replacementId={}",
                                                         guildId, channelId, userId, messageId, replacement.getId());
@@ -114,7 +114,7 @@ public class GagSpeechListener {
                                                         });
                                             });
                                 })).then().doFinally(signal -> release(channelId));
-                })).orElseGet(Mono::empty))
+                }))
                 .onErrorResume(error -> {
                     warn(channelId, "processing failed (" + error.getClass().getSimpleName() + ")");
                     return Mono.empty();
