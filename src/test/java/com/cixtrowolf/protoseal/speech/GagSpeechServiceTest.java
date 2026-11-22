@@ -40,10 +40,22 @@ class GagSpeechServiceTest {
 
     @Test
     void noGagOrNonePreferenceDoesNotReplaceMessage() {
+        assertFalse(service.hasActiveEffect("guild", "user"));
         assertTrue(service.transform("guild", "user", "hello").isEmpty());
         gag(1);
         when(consent.getGagIntensity("guild", "user")).thenReturn(GagIntensity.NONE);
+        assertFalse(service.hasActiveEffect("guild", "user"));
         assertTrue(service.transform("guild", "user", "hello").isEmpty());
+    }
+
+    @Test
+    void activeEffectIncludesReindeerEvenWhenIntensityIsNone() {
+        gag(RestraintDefinition.REINDEER_MUZZLE_LEVEL);
+        assertTrue(service.hasActiveEffect("guild", "user"));
+        verifyNoInteractions(consent);
+        gag(1);
+        when(consent.getGagIntensity("guild", "user")).thenReturn(GagIntensity.DEFAULT);
+        assertTrue(service.hasActiveEffect("guild", "user"));
     }
 
     @Test
